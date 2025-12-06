@@ -451,54 +451,60 @@ Already chosen, but here's validation:
 - ✅ Utility-first enables rapid prototyping
 - ✅ Dark theme support built-in
 - ✅ Responsive design with breakpoint prefixes
-- ✅ JIT compiler (only generates used classes)
+- ✅ New v4 engine is 5x faster for full builds, 100x faster for incremental builds
+- ✅ CSS-first configuration (no JavaScript config file needed)
 - ✅ Excellent with Next.js (zero config)
+- ✅ Modern P3 color palette with OKLCH support
 
-**Custom Theme Configuration:**
+**Tailwind v4 Configuration (CSS-first approach):**
 
-```typescript
-// tailwind.config.ts
-import type { Config } from "tailwindcss";
+Instead of `tailwind.config.ts`, configure everything in `app/globals.css`:
 
-const config: Config = {
-  darkMode: "class",
-  content: [
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
-  theme: {
-    extend: {
-      colors: {
-        netflix: {
-          red: "#E50914",
-          black: "#141414",
-          gray: "#1F1F1F",
-        },
-      },
-      fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-      },
-      animation: {
-        "fade-in": "fadeIn 0.3s ease-in-out",
-        "slide-up": "slideUp 0.4s ease-out",
-      },
-      keyframes: {
-        fadeIn: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
-        },
-        slideUp: {
-          "0%": { transform: "translateY(20px)", opacity: "0" },
-          "100%": { transform: "translateY(0)", opacity: "1" },
-        },
-      },
-    },
-  },
-  plugins: [],
-};
+```css
+@import "tailwindcss";
 
-export default config;
+@theme {
+  /* Netflix-inspired Colors */
+  --color-netflix-red: #e50914;
+  --color-netflix-red-hover: #f40612;
+  --color-netflix-black: #141414;
+  --color-netflix-gray: #1f1f1f;
+
+  /* Text Colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b3b3b3;
+  --color-text-muted: #808080;
+
+  /* Typography */
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 2.5rem;
+
+  /* Spacing (8px base unit) */
+  --spacing: 0.5rem;
+
+  /* Breakpoints */
+  --breakpoint-3xl: 1920px;
+
+  /* Custom Animations */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+}
 ```
+
+**Key Tailwind v4 Features Used:**
+
+1. **CSS Variables by Default** - All theme values accessible at runtime
+2. **Dynamic Spacing** - Any numeric value works: `mt-17`, `px-29`, etc.
+3. **OKLCH Colors** - Wider P3 color gamut for vivid colors
+4. **Container Queries** - Built-in `@container` support (no plugin needed)
+5. **Zero Configuration** - Auto-detects content from `.gitignore`
 
 ---
 

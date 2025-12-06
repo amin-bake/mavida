@@ -449,57 +449,130 @@ export const useWatchHistory = () => {
 
 ## 7. Design System Specifications
 
-### 7.1 Color Palette
+### 7.1 Tailwind CSS v4 Configuration
 
-```typescript
-// tailwind.config.ts theme extension
-const colors = {
-  primary: {
-    DEFAULT: "#E50914", // Netflix red
-    hover: "#F40612",
-  },
-  background: {
-    DEFAULT: "#141414", // Main background
-    lighter: "#1F1F1F", // Card backgrounds
-    overlay: "rgba(0, 0, 0, 0.7)",
-  },
-  text: {
-    primary: "#FFFFFF",
-    secondary: "#B3B3B3",
-    muted: "#808080",
-  },
-};
-```
+Tailwind CSS v4 uses a **CSS-first configuration** approach with the `@theme` directive instead of `tailwind.config.ts`. All customizations are defined directly in your CSS file using CSS variables.
 
-### 7.2 Typography Scale
+**Configuration in `app/globals.css`:**
 
 ```css
-/* Base font: Inter or Netflix Sans (custom) */
---font-size-xs: 0.75rem; /* 12px */
---font-size-sm: 0.875rem; /* 14px */
---font-size-base: 1rem; /* 16px */
---font-size-lg: 1.125rem; /* 18px */
---font-size-xl: 1.25rem; /* 20px */
---font-size-2xl: 1.5rem; /* 24px */
---font-size-3xl: 2rem; /* 32px */
---font-size-4xl: 2.5rem; /* 40px */
+@import "tailwindcss";
+
+@theme {
+  /* Netflix-inspired Color Palette */
+  --color-netflix-red: #e50914;
+  --color-netflix-red-hover: #f40612;
+  --color-netflix-black: #141414;
+  --color-netflix-gray: #1f1f1f;
+  --color-netflix-gray-light: #2f2f2f;
+
+  /* Background Colors */
+  --color-bg-primary: #141414;
+  --color-bg-secondary: #1f1f1f;
+  --color-bg-tertiary: #2f2f2f;
+
+  /* Text Colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b3b3b3;
+  --color-text-muted: #808080;
+
+  /* Accent Colors (using OKLCH for P3 gamut) */
+  --color-accent-red: oklch(0.55 0.22 25);
+  --color-accent-red-hover: oklch(0.6 0.24 25);
+
+  /* Typography Scale */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-3xl: 2rem; /* 32px */
+  --font-size-4xl: 2.5rem; /* 40px */
+
+  /* Font Families */
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  /* Spacing Scale (8px grid system) */
+  --spacing: 0.5rem; /* 8px base unit */
+  /* Dynamic spacing utilities: mt-1 = 8px, mt-2 = 16px, mt-3 = 24px, etc. */
+
+  /* Breakpoints */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  --breakpoint-3xl: 1920px;
+
+  /* Transitions & Animations */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+  --transition-fast: 150ms;
+  --transition-base: 200ms;
+  --transition-slow: 300ms;
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+```
+
+### 7.2 Usage Examples
+
+**Accessing Theme Variables in Components:**
+
+```tsx
+// Using Tailwind classes with custom colors
+<button className="bg-netflix-red hover:bg-netflix-red-hover">
+  Watch Now
+</button>
+
+// Using theme variables directly in CSS
+<div style={{ backgroundColor: 'var(--color-netflix-black)' }}>
+  Content
+</div>
+
+// Dynamic spacing (calculated from --spacing base unit)
+<div className="mt-8 px-6"> {/* mt-8 = 64px, px-6 = 48px */}
+  Content
+</div>
 ```
 
 ### 7.3 Spacing System (8px Grid)
 
-```typescript
-spacing: {
-  0: '0px',
-  1: '8px',
-  2: '16px',
-  3: '24px',
-  4: '32px',
-  5: '40px',
-  6: '48px',
-  8: '64px',
-  10: '80px',
-  12: '96px',
-}
+Tailwind v4 uses a **dynamic spacing scale** based on a single `--spacing` variable (8px):
+
+```css
+/* Base unit defined in @theme */
+--spacing: 0.5rem; /* 8px */
+
+/* Automatically generates utilities: */
+.mt-1 {
+  margin-top: calc(var(--spacing) * 1);
+} /* 8px */
+.mt-2 {
+  margin-top: calc(var(--spacing) * 2);
+} /* 16px */
+.mt-3 {
+  margin-top: calc(var(--spacing) * 3);
+} /* 24px */
+.px-6 {
+  padding-inline: calc(var(--spacing) * 6);
+} /* 48px */
+.w-17 {
+  width: calc(var(--spacing) * 17);
+} /* 136px */
+/* ... any numeric value works! */
 ```
 
 ### 7.4 Component Patterns
@@ -510,17 +583,107 @@ spacing: {
 - Hover effect: Scale 1.05, show title overlay
 - Transition: 200ms ease-in-out
 
+```tsx
+<div className="group relative aspect-[2/3] overflow-hidden rounded-md transition-transform duration-200 hover:scale-105">
+  <Image src={posterUrl} alt={title} fill className="object-cover" />
+  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+    <div className="absolute bottom-0 p-4">
+      <h3 className="text-text-primary font-semibold">{title}</h3>
+      <p className="text-text-secondary text-sm">{year}</p>
+    </div>
+  </div>
+</div>
+```
+
 **Movie Row:**
 
 - Horizontal scroll with scroll-snap
 - Gradient fade at edges
 - 4-6 visible items per viewport
 
+```tsx
+<div className="relative">
+  <div className="flex gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide">
+    {movies.map((movie) => (
+      <div key={movie.id} className="min-w-[200px] snap-start">
+        <MovieCard movie={movie} />
+      </div>
+    ))}
+  </div>
+  {/* Gradient overlays */}
+  <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-bg-primary to-transparent" />
+  <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-bg-primary to-transparent" />
+</div>
+```
+
 **Hero Section:**
 
 - Full viewport height initially
 - Gradient overlay for text readability
-- Play/Info buttons with glassmorphism
+- Play/Info buttons with custom styling
+
+```tsx
+<section className="relative h-screen">
+  <Image src={backdropUrl} alt={title} fill className="object-cover" priority />
+  <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+  <div className="relative z-10 flex h-full flex-col justify-center px-12 max-w-2xl">
+    <h1 className="text-6xl font-bold text-text-primary mb-4">{title}</h1>
+    <p className="text-lg text-text-secondary mb-8">{overview}</p>
+    <div className="flex gap-4">
+      <button className="bg-netflix-red hover:bg-netflix-red-hover px-8 py-3 rounded-md font-semibold transition-colors">
+        Play
+      </button>
+      <button className="bg-bg-secondary/80 hover:bg-bg-tertiary px-8 py-3 rounded-md font-semibold transition-colors">
+        More Info
+      </button>
+    </div>
+  </div>
+</section>
+```
+
+### 7.5 Custom Animations
+
+Define custom animations in your CSS using the `@theme` directive:
+
+```css
+@theme {
+  /* Animation keyframes */
+  --animate-fade-in: fade-in 0.3s ease-in-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+  --animate-scale-in: scale-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+```
 
 ---
 
@@ -528,29 +691,47 @@ spacing: {
 
 ### 8.1 Image Optimization
 
+**Next.js 16 Configuration:**
+
+In Tailwind v4, Next.js configuration is done in `next.config.ts`:
+
 ```typescript
-// next.config.ts
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   images: {
-    domains: ["image.tmdb.org"], // TMDB image CDN
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "image.tmdb.org",
+        pathname: "/t/p/**",
+      },
+    ],
     formats: ["image/avif", "image/webp"],
-    deviceSizes: [640, 750, 828, 1080, 1200],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 };
+
+export default nextConfig;
 ```
+
+**Note:** Next.js 15+ uses `remotePatterns` instead of `domains` for better security.
 
 **Usage Pattern:**
 
 ```tsx
+import Image from "next/image";
+
 <Image
-  src={movie.posterPath}
+  src={`https://image.tmdb.org/t/p/w500${movie.posterPath}`}
   alt={movie.title}
   width={300}
   height={450}
   placeholder="blur"
-  blurDataURL={movie.blurHash} // Generate from TMDB images
-/>
+  blurDataURL={generateBlurDataURL(movie.posterPath)} // Use plaiceholder or similar
+  className="object-cover"
+/>;
 ```
 
 ### 8.2 Code Splitting
