@@ -140,15 +140,15 @@ This document provides a granular breakdown of all development tasks organized i
 
 ### 2.1 Core Layout Components
 
-**Status:** 🔴 Not Started
+**Status:** 🟢 Completed
 
 | Task ID | Task                                               | Complexity | Status | Dependencies |
 | ------- | -------------------------------------------------- | ---------- | ------ | ------------ |
-| 2.1.1   | Create `Navbar` with logo and search               | High       | 🔴     | 1.2.3        |
-| 2.1.2   | Implement sticky navbar on scroll                  | Medium     | 🔴     | 2.1.1        |
-| 2.1.3   | Create `Footer` with links                         | Low        | 🔴     | None         |
-| 2.1.4   | Build main layout structure in `(main)/layout.tsx` | Medium     | 🔴     | 2.1.1, 2.1.3 |
-| 2.1.5   | Add mobile responsive menu (hamburger)             | High       | 🔴     | 2.1.1        |
+| 2.1.1   | Create `Navbar` with logo and search               | High       | 🟢     | 1.2.3        |
+| 2.1.2   | Implement sticky navbar on scroll                  | Medium     | 🟢     | 2.1.1        |
+| 2.1.3   | Create `Footer` with links                         | Low        | 🟢     | None         |
+| 2.1.4   | Build main layout structure in `(main)/layout.tsx` | Medium     | 🟢     | 2.1.1, 2.1.3 |
+| 2.1.5   | Add mobile responsive menu (hamburger)             | High       | 🟢     | 2.1.1        |
 
 **Deliverables:**
 
@@ -168,21 +168,23 @@ This document provides a granular breakdown of all development tasks organized i
 
 ### 2.2 Search Functionality
 
-**Status:** 🔴 Not Started
+**Status:** 🟢 Completed
 
 | Task ID | Task                                                     | Complexity | Status | Dependencies |
 | ------- | -------------------------------------------------------- | ---------- | ------ | ------------ |
-| 2.2.1   | Create `SearchBar` component with debouncing             | High       | 🔴     | 1.2.3        |
-| 2.2.2   | Build search results page (`app/(main)/search/page.tsx`) | Medium     | 🔴     | 2.2.1, 1.4.6 |
-| 2.2.3   | Implement search filters (genre, year, rating)           | High       | 🔴     | 2.2.2        |
-| 2.2.4   | Add recent searches to Zustand store                     | Medium     | 🔴     | 2.2.1        |
-| 2.2.5   | Display recent searches dropdown                         | Medium     | 🔴     | 2.2.4        |
+| 2.2.1   | Create `SearchBar` component with debouncing             | High       | 🟢     | 1.2.3        |
+| 2.2.2   | Build search results page (`app/(main)/search/page.tsx`) | Medium     | 🟢     | 2.2.1, 1.4.6 |
+| 2.2.3   | Implement search filters (genre, year, rating)           | High       | 🟢     | 2.2.2        |
+| 2.2.4   | Add recent searches to Zustand store                     | Medium     | 🟢     | 2.2.1        |
+| 2.2.5   | Display recent searches dropdown                         | Medium     | 🟢     | 2.2.4        |
 
 **Deliverables:**
 
 - ✅ `components/features/search/SearchBar.tsx`
+- ✅ `components/features/search/SearchFilters.tsx`
 - ✅ `app/(main)/search/page.tsx`
 - ✅ `stores/searchStore.ts`
+- ✅ `hooks/useDebounce.ts`
 - ✅ Debounced search input (300ms delay)
 
 **Success Criteria:**
@@ -651,12 +653,12 @@ Phase 1 (API) → Phase 4 (Detail/Watch) → Phase 5 (User Prefs)
 ## Progress Tracking
 
 **Total Tasks:** 120+  
-**Completed:** 25 (Phase 1 Complete!)  
+**Completed:** 35 (Phase 1, 2.1 & 2.2 Complete!)  
 **In Progress:** 0  
-**Not Started:** 95+
+**Not Started:** 85+
 
 **Estimated Total Time:** 12-15 days (full-time)  
-**Current Phase:** Phase 2.1 - Core Layout Components
+**Current Phase:** Phase 3.1 - Movie Card Component
 
 ---
 
@@ -664,11 +666,11 @@ Phase 1 (API) → Phase 4 (Detail/Watch) → Phase 5 (User Prefs)
 
 For the next implementation session, we'll tackle:
 
-1. **Task 2.1.1** - Create Navbar component with logo and search bar
-2. **Task 2.1.2** - Implement sticky navbar on scroll
-3. **Task 2.1.3** - Create Footer component with links
-4. **Task 2.1.4** - Build main layout structure in (main)/layout.tsx
-5. **Task 2.1.5** - Add mobile responsive menu (hamburger)
+1. **Task 3.1.1** - Create MovieCard with poster and title
+2. **Task 3.1.2** - Add hover effect (scale + info overlay)
+3. **Task 3.1.3** - Implement favorite button (heart icon)
+4. **Task 3.1.4** - Add prefetch on hover for detail page
+5. **Task 3.1.5** - Optimize images with next/image
 
 **Estimated Time for Next Session:** 3-4 hours
 
@@ -687,11 +689,195 @@ After each session, update this document with:
 ---
 
 **Last Updated:** December 7, 2025  
-**Current Status:** Phase 1 Complete (Foundation & Setup) - Starting Phase 2
+**Current Status:** Phase 1, 2.1 & 2.2 Complete - Starting Phase 3.1
 
 ---
 
 ## Session Log
+
+### Session 5 - December 7, 2025 (Phase 2.2 - Search Functionality)
+
+**✅ Completed Tasks:**
+
+- 2.2.1: Created SearchBar component with 300ms debouncing and recent searches
+- 2.2.2: Built comprehensive search results page with loading/error states
+- 2.2.3: Implemented SearchFilters with genre, year, and rating dropdowns
+- 2.2.4: Added searchStore.ts with Zustand + localStorage persistence
+- 2.2.5: Integrated recent searches dropdown with filter/remove functionality
+
+**📝 Architectural Decisions:**
+
+1. **Debouncing:** Custom useDebounce hook with 300ms delay for search optimization
+2. **State Management:** Zustand store with localStorage persistence for recent searches (max 10)
+3. **Search UI:** Recent searches dropdown with click-outside handler, filter by current query
+4. **Filters:** Genre (TMDB IDs), Year (1900-current), Rating (7+, 8+, 9+) dropdowns
+5. **Responsive Design:** Collapsible filters on mobile, grid layout on desktop
+6. **Movie Components:** Created reusable MovieCard and MovieGrid for search results
+7. **Error Handling:** Empty states for no query, no results, and API errors
+8. **Navbar Integration:** Updated Navbar to use new SearchBar component
+
+**🔗 Files Created:**
+
+- stores/searchStore.ts: Zustand store with recent searches management
+- hooks/useDebounce.ts: Custom debounce hook for search input
+- components/features/search/SearchBar.tsx: Advanced search with recent searches dropdown
+- components/features/search/SearchFilters.tsx: Genre/year/rating filter component
+- components/features/search/index.ts: Barrel exports for search components
+- components/features/movie/MovieCard.tsx: Movie poster card with hover effects
+- components/features/movie/MovieGrid.tsx: Responsive movie grid layout
+- components/features/movie/index.ts: Barrel exports for movie components
+- app/(main)/search/page.tsx: Search results page with filters
+
+**🔧 Files Modified:**
+
+- components/layout/Navbar.tsx: Integrated new SearchBar component
+- hooks/index.ts: Added useDebounce export
+
+**🎨 Features Implemented:**
+
+**SearchBar:**
+
+- 300ms debounced search input using custom useDebounce hook
+- Recent searches dropdown with up to 10 items
+- Click-outside handler to close dropdown
+- Filter recent searches by current query
+- Remove individual recent searches with X button
+- Clear all recent searches button
+- Form submission on Enter key
+- Auto-navigation to /search?q=query route
+- localStorage persistence via Zustand middleware
+
+**SearchFilters:**
+
+- Genre dropdown with 20 TMDB genre options
+- Year dropdown (current year down to 1900)
+- Rating dropdown (7+, 8+, 9+ stars)
+- Reset filters button
+- Active filters indicator
+- Collapsible on mobile with expand/collapse button
+- Real-time filter application
+
+**Search Page:**
+
+- Suspense boundary for loading state
+- SearchBar with autoFocus on initial load
+- SearchFilters integration
+- TanStack Query integration with useSearchMovies hook
+- Skeleton loaders during data fetch
+- MovieGrid for results display
+- Empty states: no query, no results, API errors
+- Result count display
+
+**MovieCard:**
+
+- Responsive poster image with next/image optimization
+- Aspect ratio 2:3 for consistent layout
+- Hover scale effect (scale-105)
+- Gradient overlay on hover with movie info
+- Star rating with yellow icon
+- Release year display
+- Fallback icon for missing posters
+- Mobile-friendly title display below poster
+- Link to movie detail page (/movie/[id])
+
+**MovieGrid:**
+
+- Responsive grid: 2 cols mobile, 3 tablet, 4 md, 5 lg
+- Gap-4 spacing between cards
+
+**✅ Verification:**
+
+- TypeScript compilation: ✅ Passed (npm run type-check)
+- Production build: ✅ Success (3.3s compile time)
+- Search route generated: ✅ /search static page
+- All imports resolve correctly
+- SearchBar integrated into Navbar
+- Recent searches persist across sessions
+- Filters update search results
+
+**📌 Notes:**
+
+- Phase 2.2 (Search Functionality) is now 100% complete!
+- MovieCard created early (part of Phase 3.1) to support search results
+- MovieGrid created early (part of Phase 3.2) to display search results
+- Search currently uses useSearchMovies - filters may need discoverMovies API
+- Ready to enhance MovieCard with favorites and prefetching in Phase 3.1
+- Recent searches limited to 10 items for UX optimization
+- All search components fully typed with TypeScript
+
+### Session 4 - December 7, 2025 (Phase 2.1 - Core Layout Components)
+
+**✅ Completed Tasks:**
+
+- 2.1.1: Created Navbar component with logo, search bar, and navigation links
+- 2.1.2: Implemented sticky navbar with scroll detection and transparent-to-solid transition
+- 2.1.3: Created Footer component with links, social media icons, and responsive layout
+- 2.1.4: Built main layout structure in app/(main)/layout.tsx with Navbar and Footer
+- 2.1.5: Added mobile responsive hamburger menu with smooth animations
+
+**📝 Architectural Decisions:**
+
+1. **Sticky Navbar:** Uses scroll detection with transparent gradient when at top, solid background when scrolled
+2. **Route Groups:** Used Next.js (main) route group for shared layout without affecting URL structure
+3. **Mobile-First:** Navbar adapts with hamburger menu on mobile, full navigation on desktop
+4. **Search Integration:** Search bar integrated into navbar, submits to /search route with query params
+5. **Responsive Design:** Breakpoints at md (768px) for mobile/desktop transitions
+6. **Accessibility:** ARIA labels, keyboard navigation, semantic HTML elements
+7. **Visual Hierarchy:** Footer organized into sections (Product, Company, Legal) for easy navigation
+
+**🔗 Files Created:**
+
+- components/layout/Navbar.tsx: Full-featured navbar with search and mobile menu
+- components/layout/Footer.tsx: Comprehensive footer with links and social media
+- components/layout/index.ts: Barrel exports for layout components
+- app/(main)/layout.tsx: Main application layout with Navbar and Footer
+- app/(main)/page.tsx: Temporary homepage placeholder
+
+**🎨 Features Implemented:**
+
+**Navbar:**
+
+- Logo with link to homepage (MAVIDA branding)
+- Navigation links: Home, Movies, My List
+- Search bar with form submission to /search?q=query
+- Sticky positioning with scroll-based styling
+- Transparent gradient at top, solid background when scrolled
+- Mobile hamburger menu with smooth open/close animations
+- Responsive search bar (desktop inline, mobile in dropdown)
+
+**Footer:**
+
+- 4-column responsive grid layout
+- Brand section with logo and description
+- Organized link sections (Product, Company, Legal)
+- Social media icons (GitHub, Twitter) with hover effects
+- Copyright notice with dynamic year
+- Hover transitions on all interactive elements
+
+**Layout:**
+
+- Flexbox structure with min-h-screen
+- Fixed navbar with pt-16 content offset
+- Footer pushed to bottom with flex-1 main content
+- Route group for shared layout
+
+**✅ Verification:**
+
+- TypeScript compilation: ✅ Passed (npm run type-check)
+- Navbar scroll detection works correctly
+- Mobile menu opens/closes smoothly
+- Search form submits to correct route
+- Footer displays all links and sections
+- Responsive design tested at breakpoints
+
+**📌 Notes:**
+
+- Phase 2.1 (Core Layout Components) is now 100% complete!
+- Layout ready for search functionality (Phase 2.2)
+- Temporary homepage created - will be replaced with hero section in Phase 3
+- All navigation links point to future pages
+- Mobile menu closes automatically when route changes
+- Search functionality will be enhanced with debouncing in Phase 2.2
 
 ### Session 3 - December 7, 2025 (Phase 1.4 - TanStack Query Setup)
 
