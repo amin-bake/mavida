@@ -121,7 +121,7 @@ export function SearchFilters({ filters, onFilterChange }: SearchFiltersProps) {
       <div
         className={`${
           isExpanded ? 'block' : 'hidden'
-        } gap-y-4 md:gap-y-0 md:grid md:grid-cols-4 md:gap-4`}
+        } flex flex-col gap-4 md:gap-0 md:grid md:grid-cols-4 md:gap-4`}
       >
         {/* Genre Filter */}
         <div>

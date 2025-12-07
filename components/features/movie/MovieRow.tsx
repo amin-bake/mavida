@@ -77,7 +77,7 @@ export function MovieRow({ title, movies, className = '', priority = false }: Mo
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative px-4 md:px-8 ${className}`}>
       {/* Title */}
       <h2 className="mb-4 text-xl font-bold text-text-primary md:text-2xl">{title}</h2>
 

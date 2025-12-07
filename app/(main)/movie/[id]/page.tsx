@@ -24,7 +24,7 @@ export default function MovieDetailPage() {
     return (
       <div className="min-h-screen bg-background">
         <div className="relative h-[70vh] animate-pulse bg-card" />
-        <div className="container mx-auto px-4 py-8 gap-y-4">
+        <div className="container mx-auto px-4 py-8 flex flex-col gap-4">
           <div className="h-12 w-2/3 bg-card rounded-md animate-pulse" />
           <div className="h-6 w-1/2 bg-card rounded-md animate-pulse" />
           <div className="h-32 w-full bg-card rounded-md animate-pulse" />
@@ -36,7 +36,7 @@ export default function MovieDetailPage() {
   if (isError || !movie) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center gap-y-4">
+        <div className="text-center flex flex-col gap-4">
           <h1 className="text-2xl font-bold text-foreground">Movie Not Found</h1>
           <p className="text-muted-foreground">The movie you're looking for doesn't exist.</p>
           <Button onClick={() => router.push('/')}>Back to Home</Button>
@@ -90,7 +90,7 @@ export default function MovieDetailPage() {
               )}
 
               {/* Movie Info */}
-              <div className="flex-1 gap-y-4">
+              <div className="flex-1 flex flex-col gap-4">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground drop-shadow-2xl">
                   {movie.title}
                 </h1>
@@ -171,10 +171,10 @@ export default function MovieDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 md:px-8 py-12 gap-y-12">
+      <div className="container mx-auto px-4 md:px-8 py-12 flex flex-col gap-12">
         {/* Overview */}
         {movie.overview && (
-          <div className="max-w-4xl gap-y-4">
+          <div className="max-w-4xl flex flex-col gap-4">
             <h2 className="text-2xl font-bold text-foreground">Overview</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">{movie.overview}</p>
           </div>
@@ -182,13 +182,13 @@ export default function MovieDetailPage() {
 
         {/* Cast */}
         {movie.cast && movie.cast.length > 0 && (
-          <div className="gap-y-4">
+          <div className="flex flex-col gap-4">
             <h2 className="text-2xl font-bold text-foreground">Cast</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {movie.cast.slice(0, 12).map((actor) => {
                 const profileUrl = actor.profilePath ? getPosterUrl(actor.profilePath, 'sm') : null;
                 return (
-                  <div key={actor.id} className="gap-y-2">
+                  <div key={actor.id} className="flex flex-col gap-2">
                     {profileUrl ? (
                       <div className="relative aspect-2/3 rounded-md overflow-hidden bg-card">
                         <Image
@@ -229,7 +229,7 @@ export default function MovieDetailPage() {
 
         {/* Trailers */}
         {movie.videos && movie.videos.length > 0 && (
-          <div className="gap-y-4">
+          <div className="flex flex-col gap-4">
             <h2 className="text-2xl font-bold text-foreground">Trailers</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {movie.videos.slice(0, 2).map((video) => (

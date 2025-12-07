@@ -29,7 +29,7 @@ export function Footer() {
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Section */}
-          <div className="gap-y-5">
+          <div className="flex flex-col gap-5">
             <Link href="/" className="inline-block">
               <span className="text-3xl font-bold text-primary tracking-tight">MAVIDA</span>
             </Link>
@@ -41,7 +41,7 @@ export function Footer() {
           {/* Product Links */}
           <div>
             <h3 className="text-base font-bold text-foreground mb-5">Product</h3>
-            <ul className="gap-y-3">
+            <ul className="flex flex-col gap-3">
               {footerLinks.product.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -58,7 +58,7 @@ export function Footer() {
           {/* Company Links */}
           <div>
             <h3 className="text-base font-bold text-foreground mb-5">Company</h3>
-            <ul className="gap-y-3">
+            <ul className="flex flex-col gap-3">
               {footerLinks.company.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -75,7 +75,7 @@ export function Footer() {
           {/* Legal Links */}
           <div>
             <h3 className="text-base font-bold text-foreground mb-5">Legal</h3>
-            <ul className="gap-y-3">
+            <ul className="flex flex-col gap-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -92,11 +92,11 @@ export function Footer() {
 
         {/* Bottom Section */}
         <div className="mt-16 pt-8 border-t-2 border-border">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-y-6 sm:gap-y-0">
-            <p className="text-base text-muted-foreground">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 sm:gap-0">
+            <p className="text-base text-muted-foreground bg-">
               © {currentYear} Mavida. All rights reserved.
             </p>
-            <div className="flex gap-x-8">
+            <div className="flex gap-8">
               <a
                 href="https://github.com"
                 target="_blank"

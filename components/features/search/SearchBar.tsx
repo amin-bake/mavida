@@ -97,7 +97,7 @@ export function SearchBar({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsOpen(true)}
           autoFocus={autoFocus}
-          className="w-full pr-12 "
+          className="w-full pr-12"
         />
         <button
           type="submit"
@@ -146,7 +146,7 @@ export function SearchBar({
                       onClick={() => handleRecentSearchClick(recentQuery)}
                       className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted transition-colors group rounded-lg mx-1 my-0.5"
                     >
-                      <div className="flex items-center gap-x-3">
+                      <div className="flex items-center gap-3">
                         <svg
                           className="h-5 w-5 text-muted-foreground"
                           fill="none"

@@ -93,12 +93,12 @@ export function Navbar() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm">
-          <div className="px-4 py-6 gap-y-6">
+          <div className="px-4 py-6 flex flex-col gap-6">
             {/* Mobile Search */}
             <SearchBar showRecentSearches={true} />
 
             {/* Mobile Navigation Links */}
-            <div className="gap-y-1">
+            <div className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}

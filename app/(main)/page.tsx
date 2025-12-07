@@ -37,7 +37,7 @@ export default function HomePage() {
       <MovieHero />
 
       {/* Movie Rows */}
-      <div className="relative -mt-24 z-10 gap-y-12 pb-20">
+      <div className="relative -mt-24 z-10 flex flex-col gap-12 pb-20">
         {/* Continue Watching Row - Will be implemented in Phase 5 */}
         {/* TODO: Implement Continue Watching with movie detail fetch */}
 

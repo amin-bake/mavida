@@ -24,7 +24,7 @@ export default function WatchPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center gap-y-4">
+        <div className="text-center flex flex-col gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
           <p className="text-muted-foreground">Loading player...</p>
         </div>
@@ -35,7 +35,7 @@ export default function WatchPage() {
   if (!movie) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center gap-y-4">
+        <div className="text-center flex flex-col gap-4">
           <h1 className="text-2xl font-bold text-foreground">Movie Not Found</h1>
           <Button onClick={() => router.push('/')}>Back to Home</Button>
         </div>
