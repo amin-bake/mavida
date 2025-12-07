@@ -73,3 +73,12 @@ export const userKeys = {
  * Utility type to extract query key from factory function
  */
 export type QueryKey<T extends (...args: any[]) => readonly unknown[]> = ReturnType<T>;
+
+/**
+ * Combined query keys for convenience
+ */
+export const queryKeys = {
+  movies: movieKeys,
+  genres: genreKeys,
+  user: userKeys,
+};

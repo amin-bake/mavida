@@ -1,55 +1,58 @@
 import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
+
 import { cn } from '@/lib/utils';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
-  isLoading?: boolean;
-}
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    { className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props },
-    ref
-  ) => {
-    const baseStyles =
-      'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
-
-    const variants = {
-      primary:
-        'bg-netflix-red text-text-primary hover:bg-netflix-red-hover focus-visible:ring-netflix-red',
-      secondary:
-        'bg-bg-secondary text-text-primary hover:bg-bg-tertiary focus-visible:ring-bg-tertiary',
-      ghost: 'text-text-primary hover:bg-bg-secondary focus-visible:ring-bg-secondary',
-      danger: 'bg-red-600 text-text-primary hover:bg-red-700 focus-visible:ring-red-600',
-    };
-
-    const sizes = {
-      sm: 'h-9 px-3 text-sm',
-      md: 'h-12 px-5 text-base',
-      lg: 'h-14 px-8 text-lg',
-    };
-
-    return (
-      <button
-        ref={ref}
-        className={cn(baseStyles, variants[variant], sizes[size], className)}
-        disabled={disabled || isLoading}
-        {...props}
-      >
-        {isLoading ? (
-          <>
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            <span>Loading...</span>
-          </>
-        ) : (
-          children
-        )}
-      </button>
-    );
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 nowrap rounded-md text-sm font-medium transition-all duration-200 ease-in-out disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95",
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md',
+        destructive: 'bg-destructive text-white shadow-sm hover:bg-destructive/90 hover:shadow-md',
+        outline:
+          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-accent',
+        secondary:
+          'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        default: 'h-11 min-h-[44px] px-4 py-2' /* 44px touch target */,
+        sm: 'h-10 min-h-[40px] px-3 text-sm',
+        lg: 'h-12 min-h-[48px] px-6 text-base',
+        icon: 'size-11 min-h-[44px] min-w-[44px]' /* 44px touch target */,
+        'icon-sm': 'size-10 min-h-[40px] min-w-[40px]',
+        'icon-lg': 'size-12 min-h-[48px] min-w-[48px]',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
   }
 );
 
-Button.displayName = 'Button';
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: React.ComponentProps<'button'> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  }) {
+  const Comp = asChild ? Slot : 'button';
 
-export { Button };
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
+}
+
+export { Button, buttonVariants };

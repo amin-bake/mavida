@@ -1,4 +1,4 @@
-export { Button, type ButtonProps } from './Button';
+export { Button, buttonVariants } from './Button';
 export {
   Card,
   CardHeader,
@@ -8,7 +8,7 @@ export {
   CardFooter,
   type CardProps,
 } from './Card';
-export { Input, type InputProps } from './Input';
+export { Input } from './Input';
 export { Modal, type ModalProps } from './Modal';
-export { Skeleton, type SkeletonProps } from './Skeleton';
+export { Skeleton } from './Skeleton';
 export { Spinner, type SpinnerProps } from './Spinner';
