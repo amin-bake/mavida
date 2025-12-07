@@ -79,7 +79,7 @@ export function MovieRow({ title, movies, className = '', priority = false }: Mo
   return (
     <div className={`relative px-4 md:px-8 ${className}`}>
       {/* Title */}
-      <h2 className="mb-4 text-xl font-bold text-text-primary md:text-2xl">{title}</h2>
+      <h2 className="mb-8 w-fit text-xl font-bold text-text-primary md:text-2xl ">{title}</h2>
 
       {/* Scroll Container */}
       <div className="group relative">
@@ -111,10 +111,10 @@ export function MovieRow({ title, movies, className = '', priority = false }: Mo
           </button>
         )}
 
-        {/* Movies Container */}
+        {/* Scroll Container */}
         <div
           ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth mt-4"
           style={{
             scrollSnapType: 'x mandatory',
             WebkitOverflowScrolling: 'touch',

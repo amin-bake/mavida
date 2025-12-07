@@ -120,9 +120,9 @@ export function SearchBar({
 
       {/* Recent Searches Dropdown */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-3 bg-popover border-2 border-border rounded-xl shadow-2xl overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-3 bg-black/50 border rounded-xl shadow-2xl overflow-hidden z-50 text-white hover:bg-black/40 backdrop-blur-md border-white/20">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="flex items-center justify-between px-5 py-4 border-b border">
             <span className="text-sm font-semibold text-foreground">
               {query ? 'Matching Searches' : 'Recent Searches'}
             </span>
@@ -142,11 +142,11 @@ export function SearchBar({
               <ul>
                 {filteredRecentSearches.map((recentQuery) => (
                   <li key={recentQuery}>
-                    <button
-                      onClick={() => handleRecentSearchClick(recentQuery)}
-                      className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted transition-colors group rounded-lg mx-1 my-0.5"
-                    >
-                      <div className="flex items-center gap-3">
+                    <div className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted transition-colors group rounded-lg mx-1 my-0.5">
+                      <button
+                        onClick={() => handleRecentSearchClick(recentQuery)}
+                        className="flex items-center gap-3 flex-1 text-left"
+                      >
                         <svg
                           className="h-5 w-5 text-muted-foreground"
                           fill="none"
@@ -159,7 +159,7 @@ export function SearchBar({
                           <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-base text-foreground">{recentQuery}</span>
-                      </div>
+                      </button>
                       <button
                         onClick={(e) => handleRemoveRecentSearch(e, recentQuery)}
                         className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all p-1.5 hover:bg-muted/50 rounded"
@@ -177,7 +177,7 @@ export function SearchBar({
                           <path d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
-                    </button>
+                    </div>
                   </li>
                 ))}
               </ul>

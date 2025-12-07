@@ -16,10 +16,22 @@ import { useUserPreferencesStore } from '@/stores';
  */
 export default function HomePage() {
   // Fetch movie data
-  const { data: trendingData, isLoading: trendingLoading } = useTrendingMovies('week', 1);
-  const { data: popularData, isLoading: popularLoading } = usePopularMovies(1);
-  const { data: topRatedData, isLoading: topRatedLoading } = useTopRatedMovies(1);
-  const { data: nowPlayingData, isLoading: nowPlayingLoading } = useNowPlayingMovies(1);
+  const {
+    data: trendingData,
+    isLoading: trendingLoading,
+    error: trendingError,
+  } = useTrendingMovies('week', 1);
+  const { data: popularData, isLoading: popularLoading, error: popularError } = usePopularMovies(1);
+  const {
+    data: topRatedData,
+    isLoading: topRatedLoading,
+    error: topRatedError,
+  } = useTopRatedMovies(1);
+  const {
+    data: nowPlayingData,
+    isLoading: nowPlayingLoading,
+    error: nowPlayingError,
+  } = useNowPlayingMovies(1);
 
   // Get watch history for "Continue Watching" row
   const watchHistory = useUserPreferencesStore((state) => state.watchHistory);
@@ -33,11 +45,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
+      {/* Hero Section - extends under navbar */}
       <MovieHero />
 
-      {/* Movie Rows */}
-      <div className="relative -mt-24 z-10 flex flex-col gap-12 pb-20">
+      {/* Movie Rows - with top padding */}
+      <div className="relative z-10 flex flex-col gap-16 pb-20 pt-6">
         {/* Continue Watching Row - Will be implemented in Phase 5 */}
         {/* TODO: Implement Continue Watching with movie detail fetch */}
 

@@ -25,21 +25,21 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-card border-t-2 border-border mt-auto">
+    <footer className="bg-card mt-auto">
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
+        {/* <div className=" hidden grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4"> */}
           {/* Brand Section */}
-          <div className="flex flex-col gap-5">
+          {/* <div className="flex flex-col gap-5">
             <Link href="/" className="inline-block">
               <span className="text-3xl font-bold text-primary tracking-tight">MAVIDA</span>
             </Link>
             <p className="text-base text-muted-foreground leading-relaxed">
               Your personal movie streaming platform. Discover and watch your favorite movies.
             </p>
-          </div>
+          </div> */}
 
           {/* Product Links */}
-          <div>
+          {/* <div>
             <h3 className="text-base font-bold text-foreground mb-5">Product</h3>
             <ul className="flex flex-col gap-3">
               {footerLinks.product.map((link) => (
@@ -53,10 +53,10 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
           {/* Company Links */}
-          <div>
+          {/* <div>
             <h3 className="text-base font-bold text-foreground mb-5">Company</h3>
             <ul className="flex flex-col gap-3">
               {footerLinks.company.map((link) => (
@@ -70,10 +70,10 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
           {/* Legal Links */}
-          <div>
+          {/* <div>
             <h3 className="text-base font-bold text-foreground mb-5">Legal</h3>
             <ul className="flex flex-col gap-3">
               {footerLinks.legal.map((link) => (
@@ -87,8 +87,8 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
 
         {/* Bottom Section */}
         <div className="mt-16 pt-8 border-t-2 border-border">

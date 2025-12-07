@@ -106,9 +106,6 @@ export class TMDBClient {
   private buildUrl(endpoint: string, params: Record<string, unknown> = {}): string {
     const url = new URL(`${TMDB_API_BASE_URL}${endpoint}`);
 
-    // Add API key
-    url.searchParams.set('api_key', this.apiKey);
-
     // Add default params
     url.searchParams.set('language', this.language);
 
@@ -133,6 +130,7 @@ export class TMDBClient {
         const response = await fetch(url, {
           method: 'GET',
           headers: {
+            Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
         });

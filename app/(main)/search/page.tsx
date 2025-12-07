@@ -39,10 +39,10 @@ function SearchContent() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pt-24">
       {/* Search Bar */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text-primary mb-4">Search Movies</h1>
+        {/* <h1 className="text-3xl font-bold text-text-primary mb-4">Search Movies</h1> */}
         <SearchBar
           initialQuery={query}
           onSearch={handleSearch}

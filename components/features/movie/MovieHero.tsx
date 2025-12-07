@@ -32,9 +32,53 @@ export function MovieHero({
 }: MovieHeroProps) {
   const { data, isLoading, isError } = useTrendingMovies('day', 1);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  const movies = data?.movies || [];
+  const movies = (data?.movies || []).slice(0, 6);
   const currentMovie: Movie | undefined = movies[currentIndex];
+
+  // Minimum swipe distance (in px) to trigger navigation
+  const minSwipeDistance = 50;
+
+  // Handle touch start
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  // Handle touch move
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  // Handle touch end
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      // Swipe left - next movie
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % movies.length);
+    }
+
+    if (isRightSwipe) {
+      // Swipe right - previous movie
+      setCurrentIndex((prevIndex) => (prevIndex - 1 + movies.length) % movies.length);
+    }
+  };
+
+  // Navigate to next/previous movie
+  const goToNext = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % movies.length);
+  };
+
+  const goToPrevious = () => {
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + movies.length) % movies.length);
+  };
 
   // Auto-rotate effect
   useEffect(() => {
@@ -50,7 +94,7 @@ export function MovieHero({
   // Loading state
   if (isLoading) {
     return (
-      <div className="relative h-[70vh] w-full animate-pulse bg-surface-secondary">
+      <div className="relative h-[85vh] w-full animate-pulse bg-surface-secondary">
         <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 lg:p-16">
           <div className="h-12 w-2/3 rounded bg-surface-tertiary mb-4" />
           <div className="h-6 w-1/2 rounded bg-surface-tertiary mb-6" />
@@ -66,7 +110,7 @@ export function MovieHero({
   // Error state
   if (isError || !currentMovie) {
     return (
-      <div className="relative h-[70vh] w-full bg-surface-secondary flex items-center justify-center">
+      <div className="relative h-[85vh] w-full bg-surface-secondary flex items-center justify-center">
         <div className="text-center px-4">
           <p className="text-xl text-text-secondary mb-4">Unable to load featured movies</p>
           <Button variant="default">
@@ -81,7 +125,12 @@ export function MovieHero({
   const rating = currentMovie.rating.toFixed(1);
 
   return (
-    <div className={`relative h-[70vh] w-full overflow-hidden ${className}`}>
+    <div
+      className={`relative h-[95vh] w-full overflow-hidden group ${className}`}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Backdrop Image */}
       {backdropUrl && (
         <Image
@@ -94,9 +143,12 @@ export function MovieHero({
         />
       )}
 
-      {/* Gradient Overlays */}
-      <div className="absolute inset-0 bg-linear-to-t from-primary via-primary/60 to-transparent" />
-      <div className="absolute inset-0 bg-linear-to-r from-primary/80 via-transparent to-transparent" />
+      {/* Gradient Overlays - Enhanced for both dark and bright images */}
+      {/* Top gradient for navbar area - with soft fade at bottom */}
+      <div className="absolute top-0 left-0 right-0 h-20 bg-linear-to-b from-black/80 via-black/30 to-black/0 blur-in-xl" />
+
+      {/* Content area gradient - ultra-soft multi-layer blending */}
+      <div className="absolute bottom-0 left-0 w-[50%] h-[65%] bg-linear-to-tr from-black/60 via-black/20 to-transparent blur-2xl" />
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 lg:p-20">
@@ -107,7 +159,7 @@ export function MovieHero({
           </h1>
 
           {/* Metadata */}
-          <div className="flex items-center gap-5 mb-8 text-base md:text-lg">
+          <div className="flex items-center gap-5 mb-4 text-base md:text-lg">
             {/* Rating */}
             <div className="flex items-center gap-1.5">
               <svg
@@ -135,13 +187,13 @@ export function MovieHero({
           </div>
 
           {/* Description */}
-          <p className="text-base md:text-lg lg:text-xl text-white/95 mb-10 line-clamp-3 drop-shadow-lg leading-relaxed max-w-2xl">
+          <p className="text-base md:text-lg lg:text-xl text-white/95 mt-4 mb-1 line-clamp-3 drop-shadow-lg leading-relaxed max-w-2xl">
             {currentMovie.overview}
           </p>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap gap-4">
-            <Button variant="default" size="lg">
+          <div className="flex flex-wrap gap-4 w-fit mt-4">
+            <Button variant="default" size="lg" className="shadow-xl">
               <Link href={`/movie/${currentMovie.id}/watch`} className="flex items-center">
                 <svg
                   className="w-5 h-5 mr-2"
@@ -155,7 +207,7 @@ export function MovieHero({
               </Link>
             </Button>
 
-            <Button variant="secondary" size="lg">
+            <Button variant="glass" size="lg" className="shadow-xl">
               <Link href={`/movie/${currentMovie.id}`} className="flex items-center">
                 <svg
                   className="w-5 h-5 mr-2"
@@ -178,15 +230,54 @@ export function MovieHero({
         </div>
       </div>
 
+      {/* Navigation Arrows - Desktop */}
+      {movies.length > 1 && (
+        <>
+          {/* Previous Button */}
+          <button
+            onClick={goToPrevious}
+            className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full transition-all opacity-0 hover:opacity-100 group-hover:opacity-100"
+            aria-label="Previous movie"
+          >
+            <svg
+              className="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Next Button */}
+          <button
+            onClick={goToNext}
+            className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full transition-all opacity-0 hover:opacity-100 group-hover:opacity-100"
+            aria-label="Next movie"
+          >
+            <svg
+              className="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </>
+      )}
+
       {/* Rotation Indicators */}
       {autoRotate && movies.length > 1 && (
-        <div className="absolute bottom-4 right-4 md:bottom-8 md:right-8 flex gap-2">
-          {movies.slice(0, 5).map((_movie, index) => (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 md:bottom-8 flex gap-2 pt-4">
+          {movies.map((_movie, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`h-1 transition-all duration-300 rounded-full ${
-                index === currentIndex ? 'w-8 bg-white' : 'w-1 bg-white/50 hover:bg-white/75'
+              className={`h-3 transition-all duration-300 rounded-full ${
+                index === currentIndex ? 'w-8 bg-white' : 'w-3 bg-white/50 hover:bg-white/75'
               }`}
               aria-label={`View movie ${index + 1}`}
             />
