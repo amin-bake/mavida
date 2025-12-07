@@ -21,4 +21,6 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
   );
 }
 
+// Input component automatically forwards all ARIA attributes through ...props
+
 export { Input };

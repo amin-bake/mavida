@@ -17,7 +17,10 @@ export default function WatchPage() {
   // Track watch when page loads
   useEffect(() => {
     if (movie) {
-      updateWatchProgress(movie.id, 0, movie.title, movie.posterPath);
+      // Set progress to 15% for visibility
+      // Note: VidSrc is an iframe, so we cannot track actual playback progress
+      // Users would need to manually update progress or we'd need a different player
+      updateWatchProgress(movie.id, 15, movie.title, movie.posterPath);
     }
   }, [movie, updateWatchProgress]);
 

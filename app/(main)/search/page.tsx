@@ -1,8 +1,3 @@
-/**
- * Search Page
- * Displays search results with filters
- */
-
 'use client';
 
 import { Suspense, useState } from 'react';
@@ -11,7 +6,7 @@ import { SearchBar } from '@/components/features/search/SearchBar';
 import { SearchFilters } from '@/components/features/search/SearchFilters';
 import { MovieGrid } from '@/components/features/movie/MovieGrid';
 import { useSearchMovies } from '@/hooks/useMovies';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { MovieGridSkeleton, ErrorFallback, EmptyStateFallback } from '@/components/ui';
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -25,7 +20,7 @@ function SearchContent() {
   });
 
   // Fetch search results
-  const { data, isLoading, isError, error } = useSearchMovies(query, {
+  const { data, isLoading, isError, error, refetch } = useSearchMovies(query, {
     page: 1,
     year: filters.year ? parseInt(filters.year) : undefined,
   });
@@ -81,17 +76,16 @@ function SearchContent() {
         ) : isLoading ? (
           <div>
             <div className="mb-4 text-muted-foreground">Searching...</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {[...Array(10)].map((_, i) => (
-                <Skeleton key={i} className="h-96" />
-              ))}
-            </div>
+            <MovieGridSkeleton count={10} />
           </div>
         ) : isError ? (
-          <div className="text-center py-16">
-            <div className="text-error mb-2">Error loading results</div>
-            <p className="text-text-secondary">{error?.message || 'Something went wrong'}</p>
-          </div>
+          <ErrorFallback
+            error={error as Error}
+            onRetry={() => refetch()}
+            message="Failed to load search results. Please try again."
+            showHomeButton={false}
+            className="py-16"
+          />
         ) : data && data.movies.length > 0 ? (
           <div>
             <div className="mb-4 text-text-secondary">
@@ -100,23 +94,10 @@ function SearchContent() {
             <MovieGrid movies={data.movies} />
           </div>
         ) : (
-          <div className="text-center py-16">
-            <svg
-              className="mx-auto h-16 w-16 text-text-secondary mb-4"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h2 className="text-xl font-semibold text-text-primary mb-2">No results found</h2>
-            <p className="text-text-secondary">
-              Try searching for something else or adjust your filters
-            </p>
-          </div>
+          <EmptyStateFallback
+            title="No results found"
+            message={`No movies found for "${query}". Try searching for something else or adjust your filters.`}
+          />
         )}
       </div>
     </div>
@@ -127,9 +108,8 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-64 mb-4" />
-          <Skeleton className="h-12 w-full mb-8" />
+        <div className="container mx-auto px-4 py-8 pt-24">
+          <MovieGridSkeleton count={10} />
         </div>
       }
     >

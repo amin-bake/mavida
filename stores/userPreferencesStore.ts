@@ -82,15 +82,15 @@ export const useUserPreferencesStore = create<UserPreferencesState>()(
           const existing = state.watchHistory.find((item) => item.movieId === movieId);
 
           if (existing) {
-            // Update existing entry
+            // Update existing entry - move to front
             return {
               watchHistory: [
                 { movieId, progress, title, posterPath, timestamp: Date.now() },
                 ...state.watchHistory.filter((item) => item.movieId !== movieId),
-              ].slice(0, 50), // Keep only last 50 items
+              ].slice(0, 50),
             };
           } else {
-            // Add new entry
+            // Add new entry at front
             return {
               watchHistory: [
                 { movieId, progress, title, posterPath, timestamp: Date.now() },
@@ -117,6 +117,7 @@ export const useUserPreferencesStore = create<UserPreferencesState>()(
     }),
     {
       name: 'mavida-user-preferences',
+      skipHydration: true, // Skip automatic hydration to prevent SSR mismatch
       partialize: (state) => ({
         favorites: state.favorites,
         watchHistory: state.watchHistory,

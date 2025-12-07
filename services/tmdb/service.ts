@@ -127,7 +127,6 @@ export async function getUpcomingMovies(page: number = 1): Promise<MoviesPage> {
 export async function getMovieDetails(movieId: number): Promise<MovieDetail> {
   const client = getClient();
   const { details, credits, videos } = await client.getFullMovieInfo(movieId);
-
   return transformMovieDetail(details, credits.cast, credits.crew, videos.results);
 }
 

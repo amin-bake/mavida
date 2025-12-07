@@ -10,19 +10,79 @@ export interface ModalProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, className }) => {
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
+
+  // Focus trap effect
   React.useEffect(() => {
+    if (!isOpen) return;
+
+    // Store the element that had focus before opening modal
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    // Get all focusable elements within the modal
+    const getFocusableElements = () => {
+      const focusableSelectors = [
+        'a[href]',
+        'button:not([disabled])',
+        'textarea:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ];
+      return modal.querySelectorAll<HTMLElement>(focusableSelectors.join(', '));
+    };
+
+    // Focus first element
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    }
+
+    // Handle tab key for focus trap
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = getFocusableElements();
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        // Shift + Tab: Moving backwards
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        }
+      } else {
+        // Tab: Moving forwards
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    // Handle escape key
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
+    document.addEventListener('keydown', handleTabKey);
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
 
     return () => {
+      document.removeEventListener('keydown', handleTabKey);
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
+
+      // Restore focus to the element that opened the modal
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
     };
   }, [isOpen, onClose]);
 
@@ -39,6 +99,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, classNa
 
       {/* Modal Content */}
       <div
+        ref={modalRef}
         className={cn(
           'relative z-10 w-full max-w-lg rounded-lg bg-bg-secondary p-6 shadow-xl animate-[scale-in_0.2s_ease-out]',
           className
@@ -50,7 +111,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, classNa
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors"
+          className="absolute right-4 top-4 rounded-full p-1 text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           aria-label="Close modal"
         >
           <svg

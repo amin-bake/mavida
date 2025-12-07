@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { SearchBar } from '@/components/features/search';
 
@@ -23,6 +23,21 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Keyboard handler for mobile menu (Escape to close)
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    },
+    [isMobileMenuOpen]
+  );
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/movies', label: 'Movies' },
@@ -36,28 +51,32 @@ export function Navbar() {
           ? 'bg-background/95 backdrop-blur-sm shadow-lg'
           : 'bg-linear-to-b from-background/80 to-transparent'
       }`}
+      role="navigation"
+      aria-label="Main navigation"
     >
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between gap-6">
           {/* Logo */}
           <div className="flex items-center shrink-0">
-            <Link href="/" className="flex items-center">
-              <span className="text-3xl font-bold text-primary tracking-tight">MAVIDA</span>
+            <Link href="/" className="flex items-center" aria-label="Mavida home">
+              <span className="text-3xl font-bold text-primary tracking-tight" aria-hidden="true">
+                MAVIDA
+              </span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-x-8">
+          <nav className="hidden md:flex items-center gap-x-8" aria-label="Primary">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground px-2 py-1"
+                className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground px-2 py-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 {link.label}
               </Link>
             ))}
-          </div>
+          </nav>
 
           {/* Search Bar (Desktop) */}
           <div className="hidden md:block flex-1 max-w-md">
@@ -67,7 +86,7 @@ export function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 text-white hover:text-primary transition-colors"
+            className="md:hidden p-2 text-white hover:text-primary transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Toggle menu"
             aria-expanded={isMobileMenuOpen}
           >
@@ -92,13 +111,19 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm">
+        <div
+          className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm"
+          role="region"
+          aria-label="Mobile menu"
+        >
           <div className="px-4 py-6 flex flex-col gap-6">
             {/* Mobile Search */}
-            <SearchBar showRecentSearches={true} />
+            <div role="search">
+              <SearchBar showRecentSearches={true} />
+            </div>
 
             {/* Mobile Navigation Links */}
-            <div className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -109,7 +134,7 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
-            </div>
+            </nav>
           </div>
         </div>
       )}
