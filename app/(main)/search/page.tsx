@@ -80,10 +80,10 @@ function SearchContent() {
           </div>
         ) : isLoading ? (
           <div>
-            <div className="mb-4 text-text-secondary">Searching...</div>
+            <div className="mb-4 text-muted-foreground">Searching...</div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {[...Array(10)].map((_, i) => (
-                <Skeleton key={i} variant="rectangular" className="h-96" />
+                <Skeleton key={i} className="h-96" />
               ))}
             </div>
           </div>
@@ -128,8 +128,8 @@ export default function SearchPage() {
     <Suspense
       fallback={
         <div className="container mx-auto px-4 py-8">
-          <Skeleton variant="text" className="h-8 w-64 mb-4" />
-          <Skeleton variant="text" className="h-12 w-full mb-8" />
+          <Skeleton className="h-8 w-64 mb-4" />
+          <Skeleton className="h-12 w-full mb-8" />
         </div>
       }
     >

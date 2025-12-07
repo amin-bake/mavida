@@ -97,15 +97,15 @@ export function SearchBar({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsOpen(true)}
           autoFocus={autoFocus}
-          className="w-full pr-10"
+          className="w-full pr-12"
         />
         <button
           type="submit"
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
           aria-label="Search"
         >
           <svg
-            className="h-5 w-5"
+            className="h-6 w-6"
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -120,16 +120,16 @@ export function SearchBar({
 
       {/* Recent Searches Dropdown */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-secondary border border-border rounded-lg shadow-lg overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-3 bg-popover border-2 border-border rounded-xl shadow-2xl overflow-hidden z-50">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-            <span className="text-sm font-semibold text-text-primary">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <span className="text-sm font-semibold text-foreground">
               {query ? 'Matching Searches' : 'Recent Searches'}
             </span>
             {recentSearches.length > 0 && (
               <button
                 onClick={clearRecentSearches}
-                className="text-xs text-text-secondary hover:text-text-primary transition-colors"
+                className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1 hover:bg-muted rounded"
               >
                 Clear All
               </button>
@@ -144,11 +144,11 @@ export function SearchBar({
                   <li key={recentQuery}>
                     <button
                       onClick={() => handleRecentSearchClick(recentQuery)}
-                      className="w-full flex items-center justify-between px-4 py-2 hover:bg-tertiary transition-colors group"
+                      className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted transition-colors group rounded-lg mx-1 my-0.5"
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-3">
                         <svg
-                          className="h-4 w-4 text-text-secondary"
+                          className="h-5 w-5 text-muted-foreground"
                           fill="none"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -158,11 +158,11 @@ export function SearchBar({
                         >
                           <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-sm text-text-primary">{recentQuery}</span>
+                        <span className="text-base text-foreground">{recentQuery}</span>
                       </div>
                       <button
                         onClick={(e) => handleRemoveRecentSearch(e, recentQuery)}
-                        className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-text-primary transition-opacity"
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all p-1.5 hover:bg-muted/50 rounded"
                         aria-label="Remove"
                       >
                         <svg
@@ -182,7 +182,7 @@ export function SearchBar({
                 ))}
               </ul>
             ) : (
-              <div className="px-4 py-8 text-center text-sm text-text-secondary">
+              <div className="px-5 py-10 text-center text-base text-muted-foreground">
                 {query ? 'No matching recent searches' : 'No recent searches'}
               </div>
             )}

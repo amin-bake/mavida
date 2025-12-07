@@ -1,65 +1,54 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+
+* {
+  /* border: 1px solid red; */
+}
+
+@custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* Netflix-inspired Color Palette */
-  --color-netflix-red: #e50914;
-  --color-netflix-red-hover: #f40612;
-  --color-netflix-black: #141414;
-  --color-netflix-gray: #1f1f1f;
-  --color-netflix-gray-light: #2f2f2f;
+  /* Netflix-inspired Color Palette - using proper --color-* namespace */
+  --color-netflix-red: oklch(0.55 0.22 25);
+  --color-netflix-red-hover: oklch(0.6 0.24 25);
 
   /* Background Colors */
-  --color-bg-primary: #141414;
-  --color-bg-secondary: #1f1f1f;
-  --color-bg-tertiary: #2f2f2f;
+  --color-primary: #141414;
+  --color-surface-primary: #141414;
+  --color-surface-secondary: #1f1f1f;
+  --color-surface-tertiary: #2f2f2f;
 
   /* Text Colors */
   --color-text-primary: #ffffff;
   --color-text-secondary: #b3b3b3;
-  --color-text-muted: #808080;
+  --color-text-tertiary: #808080;
 
-  /* Accent Colors (using OKLCH for P3 gamut) */
-  --color-accent-red: oklch(0.55 0.22 25);
-  --color-accent-red-hover: oklch(0.6 0.24 25);
+  /* Accent Colors */
+  --color-accent: oklch(0.55 0.22 25);
+  --color-accent-hover: oklch(0.6 0.24 25);
 
-  /* Typography Scale */
-  --font-size-xs: 0.75rem; /* 12px */
-  --font-size-sm: 0.875rem; /* 14px */
-  --font-size-base: 1rem; /* 16px */
-  --font-size-lg: 1.125rem; /* 18px */
-  --font-size-xl: 1.25rem; /* 20px */
-  --font-size-2xl: 1.5rem; /* 24px */
-  --font-size-3xl: 2rem; /* 32px */
-  --font-size-4xl: 2.5rem; /* 40px */
+  /* Spacing - using proper --spacing namespace */
+  --spacing: 0.25rem; /* 4px base unit for 8px grid (4px * 2 = 8px) */
 
-  /* Font Families */
+  /* Typography - using proper --text-* namespace for font sizes */
+  /* Note: Default text utilities already exist, we're extending */
+
+  /* Font Families - using proper --font-* namespace */
   --font-display: ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-body: ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  /* Spacing Scale (8px grid system) */
-  --spacing: 0.5rem; /* 8px base unit */
+  /* Border Radius - using proper --radius-* namespace */
+  /* Note: Default radius utilities already exist */
 
-  /* Breakpoints */
-  --breakpoint-3xl: 1920px;
+  /* Shadows - using proper --shadow-* namespace */
+  /* Note: Default shadow utilities already exist */
 
-  /* Transitions & Animations */
+  /* Breakpoints - using proper --breakpoint-* namespace */
+  --breakpoint-3xl: 120rem; /* 1920px */
+
+  /* Custom Animations - using proper --animate-* namespace */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
-  --transition-fast: 150ms;
-  --transition-base: 200ms;
-  --transition-slow: 300ms;
-
-  /* Border Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
 }
 
 /* Custom Animations */
@@ -106,9 +95,15 @@ html {
 }
 
 body {
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  font-family: var(--font-body);
+  background-color: rgb(15 15 15); /* #0F0F0F per protocol */
+  color: rgb(255 255 255);
+  font-family:
+    'Inter',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'SF Pro',
+    sans-serif;
   overflow-x: hidden;
 }
 
@@ -120,4 +115,121 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.5rem;
+  /* Netflix-inspired dark theme with protocol specs */
+  --background: 15 15 15; /* #0F0F0F */
+  --foreground: 255 255 255;
+  --card: 31 31 31; /* #1F1F1F */
+  --card-foreground: 255 255 255;
+  --popover: 31 31 31;
+  --popover-foreground: 255 255 255;
+  --primary: 229 9 20; /* Netflix red #E50914 */
+  --primary-foreground: 255 255 255;
+  --secondary: 64 64 64;
+  --secondary-foreground: 255 255 255;
+  --muted: 47 47 47; /* #2F2F2F */
+  --muted-foreground: 179 179 179;
+  --accent: 229 9 20;
+  --accent-foreground: 255 255 255;
+  --destructive: 239 68 68;
+  --border: 39 39 42; /* zinc-800 */
+  --input: 39 39 42;
+  --ring: 229 9 20;
+  --chart-1: 229 9 20;
+  --chart-2: 179 179 179;
+  --chart-3: 128 128 128;
+  --chart-4: 64 64 64;
+  --chart-5: 31 31 31;
+  --sidebar: 31 31 31;
+  --sidebar-foreground: 255 255 255;
+  --sidebar-primary: 229 9 20;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 47 47 47;
+  --sidebar-accent-foreground: 255 255 255;
+  --sidebar-border: 39 39 42;
+  --sidebar-ring: 229 9 20;
+}
+
+.dark {
+  --background: 15 15 15;
+  --foreground: 255 255 255;
+  --card: 31 31 31;
+  --card-foreground: 255 255 255;
+  --popover: 31 31 31;
+  --popover-foreground: 255 255 255;
+  --primary: 229 9 20;
+  --primary-foreground: 255 255 255;
+  --secondary: 64 64 64;
+  --secondary-foreground: 255 255 255;
+  --muted: 47 47 47;
+  --muted-foreground: 179 179 179;
+  --accent: 229 9 20;
+  --accent-foreground: 255 255 255;
+  --destructive: 239 68 68;
+  --border: 39 39 42;
+  --input: 39 39 42;
+  --ring: 229 9 20;
+  --chart-1: 229 9 20;
+  --chart-2: 179 179 179;
+  --chart-3: 128 128 128;
+  --chart-4: 64 64 64;
+  --chart-5: 31 31 31;
+  --sidebar: 31 31 31;
+  --sidebar-foreground: 255 255 255;
+  --sidebar-primary: 229 9 20;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 47 47 47;
+  --sidebar-accent-foreground: 255 255 255;
+  --sidebar-border: 39 39 42;
+  --sidebar-ring: 229 9 20;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

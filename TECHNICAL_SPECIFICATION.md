@@ -584,9 +584,9 @@ Tailwind v4 uses a **dynamic spacing scale** based on a single `--spacing` varia
 - Transition: 200ms ease-in-out
 
 ```tsx
-<div className="group relative aspect-[2/3] overflow-hidden rounded-md transition-transform duration-200 hover:scale-105">
+<div className="group relative aspect-2/3 overflow-hidden rounded-md transition-transform duration-200 hover:scale-105">
   <Image src={posterUrl} alt={title} fill className="object-cover" />
-  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+  <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
     <div className="absolute bottom-0 p-4">
       <h3 className="text-text-primary font-semibold">{title}</h3>
       <p className="text-text-secondary text-sm">{year}</p>
@@ -611,8 +611,8 @@ Tailwind v4 uses a **dynamic spacing scale** based on a single `--spacing` varia
     ))}
   </div>
   {/* Gradient overlays */}
-  <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-bg-primary to-transparent" />
-  <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-bg-primary to-transparent" />
+  <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-linear-to-r from-bg-primary to-transparent" />
+  <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-linear-to-l from-bg-primary to-transparent" />
 </div>
 ```
 
@@ -625,7 +625,7 @@ Tailwind v4 uses a **dynamic spacing scale** based on a single `--spacing` varia
 ```tsx
 <section className="relative h-screen">
   <Image src={backdropUrl} alt={title} fill className="object-cover" priority />
-  <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+  <div className="absolute inset-0 bg-linear-to-r from-black/90 via-black/50 to-transparent" />
   <div className="relative z-10 flex h-full flex-col justify-center px-12 max-w-2xl">
     <h1 className="text-6xl font-bold text-text-primary mb-4">{title}</h1>
     <p className="text-lg text-text-secondary mb-8">{overview}</p>

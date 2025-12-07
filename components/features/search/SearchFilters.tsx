@@ -121,7 +121,7 @@ export function SearchFilters({ filters, onFilterChange }: SearchFiltersProps) {
       <div
         className={`${
           isExpanded ? 'block' : 'hidden'
-        } md:block space-y-4 md:space-y-0 md:grid md:grid-cols-4 md:gap-4`}
+        } flex flex-col gap-4 md:gap-0 md:grid md:grid-cols-4 md:gap-4`}
       >
         {/* Genre Filter */}
         <div>
@@ -195,7 +195,7 @@ export function SearchFilters({ filters, onFilterChange }: SearchFiltersProps) {
 
       {/* Active Filters Indicator */}
       {hasActiveFilters && (
-        <div className="mt-4 flex items-center space-x-2 text-sm text-text-secondary">
+        <div className="mt-4 flex items-center gap-x-2 text-sm text-text-secondary">
           <svg
             className="h-4 w-4"
             fill="none"
