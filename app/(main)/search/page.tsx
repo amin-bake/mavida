@@ -1,8 +1,3 @@
-/**
- * Search Page
- * Displays search results with filters
- */
-
 'use client';
 
 import { Suspense, useState } from 'react';
@@ -11,13 +6,14 @@ import { SearchBar } from '@/components/features/search/SearchBar';
 import { SearchFilters } from '@/components/features/search/SearchFilters';
 import { MovieGrid } from '@/components/features/movie/MovieGrid';
 import { useSearchMovies } from '@/hooks/useMovies';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { MovieGridSkeleton, ErrorFallback, EmptyStateFallback, Button } from '@/components/ui';
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
 
   const [query, setQuery] = useState(initialQuery);
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     year: '',
     genre: '',
@@ -25,18 +21,37 @@ function SearchContent() {
   });
 
   // Fetch search results
-  const { data, isLoading, isError, error } = useSearchMovies(query, {
-    page: 1,
+  const { data, isLoading, isError, error, refetch } = useSearchMovies(query, {
+    page,
     year: filters.year ? parseInt(filters.year) : undefined,
   });
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery);
+    setPage(1); // Reset to first page on new search
   };
 
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
+    setPage(1); // Reset to first page when filters change
   };
+
+  const handleLoadMore = () => {
+    setPage((prev) => prev + 1);
+  };
+
+  const handlePreviousPage = () => {
+    setPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    if (data && page < data.totalPages) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  const hasMorePages = data && page < data.totalPages;
+  const hasPreviousPage = page > 1;
 
   return (
     <div className="container mx-auto px-4 py-8 pt-24">
@@ -81,42 +96,102 @@ function SearchContent() {
         ) : isLoading ? (
           <div>
             <div className="mb-4 text-muted-foreground">Searching...</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {[...Array(10)].map((_, i) => (
-                <Skeleton key={i} className="h-96" />
-              ))}
-            </div>
+            <MovieGridSkeleton count={10} />
           </div>
         ) : isError ? (
-          <div className="text-center py-16">
-            <div className="text-error mb-2">Error loading results</div>
-            <p className="text-text-secondary">{error?.message || 'Something went wrong'}</p>
-          </div>
+          <ErrorFallback
+            error={error as Error}
+            onRetry={() => refetch()}
+            message="Failed to load search results. Please try again."
+            showHomeButton={false}
+            className="py-16"
+          />
         ) : data && data.movies.length > 0 ? (
           <div>
-            <div className="mb-4 text-text-secondary">
+            <div className="mb-4 text-muted-foreground">
               Found {data.totalResults.toLocaleString()} results for &ldquo;{query}&rdquo;
             </div>
             <MovieGrid movies={data.movies} />
+
+            {/* Pagination Controls */}
+            <div className="mt-12 space-y-6">
+              {/* Load More Button (Progressive Loading) */}
+              {hasMorePages && (
+                <div className="flex justify-center">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleLoadMore}
+                    className="min-w-[200px]"
+                  >
+                    Load More Results
+                  </Button>
+                </div>
+              )}
+
+              {/* Page Navigation */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border">
+                {/* Previous Button */}
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousPage}
+                  disabled={!hasPreviousPage}
+                  className="w-full sm:w-auto"
+                >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                  Previous Page
+                </Button>
+
+                {/* Page Info */}
+                <div className="text-sm text-muted-foreground">
+                  Page <span className="font-semibold text-foreground">{page}</span> of{' '}
+                  <span className="font-semibold text-foreground">{data.totalPages}</span>
+                  {' • '}
+                  Showing {data.movies.length} of {data.totalResults.toLocaleString()} results
+                </div>
+
+                {/* Next Button */}
+                <Button
+                  variant="outline"
+                  onClick={handleNextPage}
+                  disabled={!hasMorePages}
+                  className="w-full sm:w-auto"
+                >
+                  Next Page
+                  <svg
+                    className="w-5 h-5 ml-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </Button>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="text-center py-16">
-            <svg
-              className="mx-auto h-16 w-16 text-text-secondary mb-4"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h2 className="text-xl font-semibold text-text-primary mb-2">No results found</h2>
-            <p className="text-text-secondary">
-              Try searching for something else or adjust your filters
-            </p>
-          </div>
+          <EmptyStateFallback
+            title="No results found"
+            message={`No movies found for "${query}". Try searching for something else or adjust your filters.`}
+          />
         )}
       </div>
     </div>
@@ -127,9 +202,8 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-64 mb-4" />
-          <Skeleton className="h-12 w-full mb-8" />
+        <div className="container mx-auto px-4 py-8 pt-24">
+          <MovieGridSkeleton count={10} />
         </div>
       }
     >

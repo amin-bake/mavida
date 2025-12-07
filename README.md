@@ -8,14 +8,70 @@ A Netflix-inspired personal movie streaming application built with Next.js 16, f
 
 ## ✨ Features
 
-- 🎬 **Browse Movies** - Trending, popular, and top-rated movies from TMDB
-- 🔍 **Smart Search** - Fast, debounced search with filters
-- 📺 **Streaming Player** - Seamless video playback with VidSrc integration
-- ⭐ **My List** - Save and manage your favorite movies
-- 📖 **Watch History** - Continue watching where you left off
-- 🎨 **Netflix-Inspired UI** - Dark theme with smooth animations
-- 📱 **Fully Responsive** - Optimized for mobile, tablet, and desktop
-- ⚡ **Lightning Fast** - Built with Next.js 16 App Router and Tailwind CSS v4
+### 🎬 Movie Discovery
+
+- **Hero Section** - Featured movie showcase with backdrop and auto-rotation
+- **Trending Now** - Latest trending movies from TMDB
+- **Popular Movies** - Most popular titles with lazy loading
+- **Top Rated** - Highest-rated movies of all time
+- **Now Playing** - Currently playing in theaters
+
+### 🔍 Advanced Search
+
+- **Smart Search Bar** - Debounced search with 300ms delay
+- **Real-time Results** - Instant search results as you type
+- **Recent Searches** - Quick access to previous searches
+- **Search Filters** - Filter by year, genre, and rating
+- **Empty States** - Helpful guidance when no results found
+
+### 📺 Video Player
+
+- **Seamless Playback** - VidSrc integration for smooth streaming
+- **Watch Progress** - Automatic tracking of playback position
+- **Resume Feature** - Continue watching from where you left off
+- **Fullscreen Support** - Native fullscreen for immersive viewing
+- **Responsive Player** - Adapts to all screen sizes
+
+### ⭐ Personal Library
+
+- **My List** - Save favorites with one click
+- **Continue Watching** - Resume incomplete movies
+- **Watch History** - Track all viewed content
+- **Persistent Storage** - Data saved to localStorage
+- **Quick Actions** - Add/remove from list anywhere in the app
+
+### 🎨 User Experience
+
+- **Netflix-Inspired Design** - Familiar, polished interface
+- **Dark Theme** - Easy on the eyes, perfect for movie browsing
+- **Smooth Animations** - Transitions and hover effects
+- **Toast Notifications** - Feedback for all user actions
+- **Error Handling** - Graceful fallbacks for failed requests
+- **Skeleton Loaders** - No blank screens during loading
+
+### ♿ Accessibility
+
+- **WCAG 2.1 AA Compliant** - Accessible to all users
+- **Keyboard Navigation** - Full keyboard support
+- **Screen Reader Friendly** - ARIA labels and semantic HTML
+- **Focus Indicators** - Clear visual focus states
+- **Skip to Content** - Quick navigation for keyboard users
+
+### ⚡ Performance
+
+- **Image Optimization** - Next.js Image with blur placeholders
+- **Code Splitting** - Lazy loading for optimal bundle size
+- **Prefetching** - Movie details prefetched on hover
+- **Caching Strategy** - Smart caching with TanStack Query
+- **Core Web Vitals** - LCP < 2.5s, CLS < 0.1, FID < 100ms
+
+### 📱 Responsive Design
+
+- **Mobile First** - Optimized for smartphones
+- **Tablet Support** - Perfect for iPads and tablets
+- **Desktop Experience** - Full-featured desktop interface
+- **Touch Gestures** - Swipe navigation for touch devices
+- **Adaptive Layouts** - Content reflows for any screen size
 
 ## 🚀 Tech Stack
 
@@ -132,10 +188,203 @@ Theme configuration is in `app/globals.css` using the `@theme` directive.
 
 ## 🔑 Environment Variables
 
-| Variable              | Description       | Required |
-| --------------------- | ----------------- | -------- |
-| `TMDB_API_KEY`        | Your TMDB API key | Yes      |
-| `NEXT_PUBLIC_APP_URL` | Application URL   | Yes      |
+Create a `.env.local` file in the root directory with the following variables:
+
+| Variable              | Description                                     | Required | Default                 | Example                     |
+| --------------------- | ----------------------------------------------- | -------- | ----------------------- | --------------------------- |
+| `TMDB_API_KEY`        | Your TMDB API key                               | Yes      | -                       | `a1b2c3d4e5f6g7h8i9j0`      |
+| `NEXT_PUBLIC_APP_URL` | Application URL for metadata and social sharing | Yes      | `http://localhost:3000` | `https://mavida.vercel.app` |
+
+### Getting Your TMDB API Key
+
+1. Create a free account at [TMDB](https://www.themoviedb.org/signup)
+2. Navigate to [API Settings](https://www.themoviedb.org/settings/api)
+3. Request an API key (select "Developer" option)
+4. Copy your API key to `.env.local`
+
+**Note:** The free tier includes 40 requests per 10 seconds, which is sufficient for personal use.
+
+## 🔌 API Integration
+
+### TMDB API
+
+Mavida uses [The Movie Database (TMDB) API](https://www.themoviedb.org/documentation/api) for all movie metadata:
+
+**Endpoints Used:**
+
+- `/movie/trending` - Trending movies
+- `/movie/popular` - Popular movies
+- `/movie/top_rated` - Top-rated movies
+- `/movie/now_playing` - Now playing in theaters
+- `/movie/{id}` - Movie details
+- `/movie/{id}/credits` - Cast and crew
+- `/movie/{id}/videos` - Trailers and videos
+- `/movie/{id}/similar` - Similar movie recommendations
+- `/search/movie` - Search movies
+
+**Features:**
+
+- TypeScript interfaces for type safety
+- Automatic request retrying with TanStack Query
+- Response caching to minimize API calls
+- Error handling with user-friendly messages
+- Image optimization with Next.js Image
+
+**Rate Limiting:**
+
+- Free tier: 40 requests per 10 seconds
+- Caching strategy reduces redundant calls
+- Prefetching on hover for better UX
+
+### VidSrc Integration
+
+Video playback powered by [VidSrc](https://vidsrc.me/):
+
+**How It Works:**
+
+- Iframe embed for seamless playback
+- URL format: `https://vidsrc.me/embed/movie/{tmdb_id}`
+- No authentication required
+- Supports fullscreen and responsive sizing
+
+**Features:**
+
+- Automatic source selection
+- Multiple quality options
+- Subtitle support
+- Mobile-optimized player
+
+**Usage:**
+
+```tsx
+<iframe
+  src={`https://vidsrc.me/embed/movie/${movieId}`}
+  allowFullScreen
+  className="w-full h-full"
+/>
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**1. "TMDB API Key Invalid" Error**
+
+- Verify your API key is correct in `.env.local`
+- Ensure you copied the API key, not the API Read Access Token
+- Restart the development server after adding the key
+
+**2. Images Not Loading**
+
+- Check TMDB image configuration in `next.config.ts`
+- Verify `remotePatterns` includes `image.tmdb.org`
+- Clear Next.js cache: `rm -rf .next`
+
+**3. Build Errors**
+
+- Run `npm run type-check` to identify TypeScript errors
+- Ensure all dependencies are installed: `npm install`
+- Check Node.js version (requires 20.x or higher)
+
+**4. Slow Performance**
+
+- Enable TanStack Query devtools to check cache hits
+- Verify image optimization is working (blur placeholders)
+- Check Network tab for redundant API calls
+
+**5. Video Player Not Working**
+
+- VidSrc may have temporary outages
+- Check browser console for iframe errors
+- Ensure third-party cookies are enabled
+- Try a different browser
+
+### Development Tips
+
+**Hot Reload Issues:**
+
+```bash
+# Clear Next.js cache
+rm -rf .next
+
+# Restart dev server
+npm run dev
+```
+
+**Type Errors:**
+
+```bash
+# Check all TypeScript errors
+npm run type-check
+
+# Fix auto-fixable issues
+npm run lint -- --fix
+```
+
+**Performance Debugging:**
+
+```bash
+# Analyze bundle size
+npm run build
+
+# Check build output in terminal
+```
+
+## 🧪 Testing
+
+While this project doesn't include automated tests, you can manually test:
+
+**Homepage:**
+
+- ✅ Hero section loads featured movie
+- ✅ All movie rows display correctly
+- ✅ Horizontal scrolling works smoothly
+- ✅ Favorite buttons toggle state
+
+**Search:**
+
+- ✅ Search bar accepts input
+- ✅ Results update as you type
+- ✅ Filters narrow results
+- ✅ Recent searches persist
+
+**Movie Detail:**
+
+- ✅ All movie information displays
+- ✅ Similar movies section loads
+- ✅ Watch Now button navigates correctly
+- ✅ Favorite button works
+
+**Video Player:**
+
+- ✅ Video embeds and plays
+- ✅ Fullscreen mode works
+- ✅ Progress saves to localStorage
+- ✅ Resume from last position works
+
+**My List:**
+
+- ✅ Favorited movies display
+- ✅ Can remove from favorites
+- ✅ Empty state shows when no favorites
+
+## 🤝 Contributing
+
+This is a personal project, but suggestions and improvements are welcome:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+**Contribution Guidelines:**
+
+- Follow existing code style
+- Add TypeScript types for all new code
+- Test on mobile, tablet, and desktop
+- Update documentation as needed
+- Keep commits focused and atomic
 
 ## 🚢 Deployment
 

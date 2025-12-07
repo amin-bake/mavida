@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { useSearchStore } from '@/stores/searchStore';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useToast } from '@/contexts/ToastContext';
 
 interface SearchBarProps {
   initialQuery?: string;
@@ -33,9 +34,15 @@ export function SearchBar({
 
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } =
     useSearchStore();
+  const toast = useToast();
 
   // Debounce the query for auto-suggestions (not used for actual search yet)
-  const debouncedQuery = useDebounce(query, 300);
+  const _debouncedQuery = useDebounce(query, 300);
+
+  const handleClearSearches = () => {
+    clearRecentSearches();
+    toast.info('Search History Cleared', 'Your recent searches have been cleared');
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -68,6 +75,14 @@ export function SearchBar({
     handleSearch(query);
   };
 
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+      setQuery('');
+    }
+  };
+
   const handleRecentSearchClick = (recentQuery: string) => {
     setQuery(recentQuery);
     handleSearch(recentQuery);
@@ -88,21 +103,27 @@ export function SearchBar({
     (filteredRecentSearches.length > 0 || recentSearches.length > 0);
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
-      <form onSubmit={handleSubmit}>
+    <div ref={containerRef} className={`relative ${className}`} role="search">
+      <form onSubmit={handleSubmit} role="search" aria-label="Movie search">
         <Input
           type="search"
           placeholder="Search movies..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsOpen(true)}
+          onKeyDown={handleKeyDown}
           autoFocus={autoFocus}
-          className="w-full pr-12"
+          className="w-full pr-4"
+          aria-label="Search for movies"
+          aria-autocomplete="list"
+          aria-controls={showDropdown ? 'recent-searches-list' : undefined}
+          aria-expanded={showDropdown}
         />
         <button
           type="submit"
           className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-          aria-label="Search"
+          aria-label="Submit search"
+          title="Search"
         >
           <svg
             className="h-6 w-6"
@@ -120,16 +141,22 @@ export function SearchBar({
 
       {/* Recent Searches Dropdown */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-3 bg-black/50 border rounded-xl shadow-2xl overflow-hidden z-50 text-white hover:bg-black/40 backdrop-blur-md border-white/20">
+        <div
+          id="recent-searches-list"
+          className="absolute top-full left-0 right-0 mt-3 bg-black/50 border rounded-xl shadow-2xl overflow-hidden z-50 text-white hover:bg-black/40 backdrop-blur-md border-white/20"
+          role="listbox"
+          aria-label="Recent searches"
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border">
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-sm font-semibold text-foreground" id="recent-searches-heading">
               {query ? 'Matching Searches' : 'Recent Searches'}
             </span>
             {recentSearches.length > 0 && (
               <button
-                onClick={clearRecentSearches}
+                onClick={handleClearSearches}
                 className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1 hover:bg-muted rounded"
+                aria-label="Clear all recent searches"
               >
                 Clear All
               </button>
@@ -137,15 +164,17 @@ export function SearchBar({
           </div>
 
           {/* Recent Search Items */}
-          <div className="max-h-64 overflow-y-auto">
+          <div className="max-h-64 overflow-y-auto" role="list">
             {filteredRecentSearches.length > 0 ? (
-              <ul>
+              <ul role="list">
                 {filteredRecentSearches.map((recentQuery) => (
-                  <li key={recentQuery}>
+                  <li key={recentQuery} role="listitem">
                     <div className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted transition-colors group rounded-lg mx-1 my-0.5">
                       <button
                         onClick={() => handleRecentSearchClick(recentQuery)}
                         className="flex items-center gap-3 flex-1 text-left"
+                        role="option"
+                        aria-label={`Search for ${recentQuery}`}
                       >
                         <svg
                           className="h-5 w-5 text-muted-foreground"
@@ -163,7 +192,8 @@ export function SearchBar({
                       <button
                         onClick={(e) => handleRemoveRecentSearch(e, recentQuery)}
                         className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all p-1.5 hover:bg-muted/50 rounded"
-                        aria-label="Remove"
+                        aria-label={`Remove ${recentQuery} from recent searches`}
+                        title="Remove"
                       >
                         <svg
                           className="h-4 w-4"

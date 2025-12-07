@@ -3,44 +3,55 @@
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useMovieDetail, useSimilarMovies } from '@/hooks/useMovies';
-import { Button } from '@/components/ui';
+import { Button, ErrorFallback, InlineErrorFallback, MovieDetailSkeleton } from '@/components/ui';
 import { MovieRow } from '@/components/features/movie';
 import { getBackdropUrl, getPosterUrl } from '@/lib/tmdb/images';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function MovieDetailPage() {
   const params = useParams();
   const router = useRouter();
   const movieId = parseInt(params.id as string);
 
-  const { data: movie, isLoading, isError } = useMovieDetail(movieId);
-  const { data: similarMovies } = useSimilarMovies(movieId, 1);
+  const { data: movie, isLoading, isError, error, refetch: refetchMovie } = useMovieDetail(movieId);
+  const {
+    data: similarMovies,
+    error: similarError,
+    refetch: refetchSimilar,
+  } = useSimilarMovies(movieId, 1);
 
   const favorites = useUserPreferencesStore((state) => state.favorites);
   const toggleFavorite = useUserPreferencesStore((state) => state.toggleFavorite);
   const isFavorite = movie ? favorites.some((fav) => fav.id === movie.id) : false;
+  const toast = useToast();
+
+  const handleToggleFavorite = () => {
+    if (movie) {
+      toggleFavorite(movie);
+      if (isFavorite) {
+        toast.info('Removed from My List', `${movie.title} has been removed from your list`);
+      } else {
+        toast.success('Added to My List', `${movie.title} has been added to your list`);
+      }
+    }
+  };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background pt-20">
-        <div className="relative h-[70vh] animate-pulse bg-card" />
-        <div className="container mx-auto px-4 py-8 flex flex-col gap-4">
-          <div className="h-12 w-2/3 bg-card rounded-md animate-pulse" />
-          <div className="h-6 w-1/2 bg-card rounded-md animate-pulse" />
-          <div className="h-32 w-full bg-card rounded-md animate-pulse" />
-        </div>
-      </div>
-    );
+    return <MovieDetailSkeleton />;
   }
 
   if (isError || !movie) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center flex flex-col gap-4">
-          <h1 className="text-2xl font-bold text-foreground">Movie Not Found</h1>
-          <p className="text-muted-foreground">The movie you're looking for doesn't exist.</p>
-          <Button onClick={() => router.push('/')}>Back to Home</Button>
-        </div>
+        <ErrorFallback
+          error={error as Error}
+          errorType={!movie && !error ? 'not-found' : undefined}
+          title={!movie && !error ? 'Movie Not Found' : undefined}
+          message={!movie && !error ? "The movie you're looking for doesn't exist." : undefined}
+          onRetry={() => refetchMovie()}
+          onGoHome={() => router.push('/')}
+        />
       </div>
     );
   }
@@ -127,7 +138,7 @@ export default function MovieDetailPage() {
                 {/* Tagline */}
                 {movie.tagline && (
                   <p className="text-lg md:text-xl italic text-muted-foreground drop-shadow-lg">
-                    "{movie.tagline}"
+                    &ldquo;{movie.tagline}&rdquo;
                   </p>
                 )}
 
@@ -147,7 +158,7 @@ export default function MovieDetailPage() {
                     variant="glass"
                     size="lg"
                     className="shadow-xl"
-                    onClick={() => movie && toggleFavorite(movie)}
+                    onClick={handleToggleFavorite}
                   >
                     {isFavorite ? (
                       <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -255,11 +266,20 @@ export default function MovieDetailPage() {
         )}
 
         {/* More Like This */}
-        {similarMovies?.movies && similarMovies.movies.length > 0 && (
+        {similarError ? (
+          <div className="px-4 md:px-8">
+            <h2 className="text-2xl font-bold mb-4">More Like This</h2>
+            <InlineErrorFallback
+              error={similarError as Error}
+              onRetry={() => refetchSimilar()}
+              message="Failed to load similar movies"
+            />
+          </div>
+        ) : similarMovies?.movies && similarMovies.movies.length > 0 ? (
           <div>
             <MovieRow title="More Like This" movies={similarMovies.movies} priority={false} />
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -192,7 +192,7 @@ body {
   --accent: 229 9 20;
   --accent-foreground: 255 255 255;
   --destructive: 239 68 68;
-  --border: 39 39 42; /* zinc-800 */
+  --border: 120 120 120; /* #787878 - WCAG AA compliant (3.73:1 on card, 4.34:1 on bg) */
   --input: 39 39 42;
   --ring: 229 9 20;
   --chart-1: 229 9 20;
@@ -226,7 +226,7 @@ body {
   --accent: 229 9 20;
   --accent-foreground: 255 255 255;
   --destructive: 239 68 68;
-  --border: 39 39 42;
+  --border: 120 120 120; /* #787878 - WCAG AA compliant */
   --input: 39 39 42;
   --ring: 229 9 20;
   --chart-1: 229 9 20;
@@ -246,10 +246,25 @@ body {
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Enhanced focus indicators for accessibility (WCAG AA) */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Specific focus styles for interactive elements */
+  a:focus-visible,
+  button:focus-visible,
+  [role='button']:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
   }
 }
 

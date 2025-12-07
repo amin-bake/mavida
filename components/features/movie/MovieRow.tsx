@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { MovieCard } from './MovieCard';
 import type { Movie } from '@/types/movie';
 
@@ -14,9 +14,16 @@ interface MovieRowProps {
   movies: Movie[];
   className?: string;
   priority?: boolean; // For above-the-fold rows
+  progressMap?: Record<number, number>; // Map of movie ID to progress percentage
 }
 
-export function MovieRow({ title, movies, className = '', priority = false }: MovieRowProps) {
+export function MovieRow({
+  title,
+  movies,
+  className = '',
+  priority = false,
+  progressMap,
+}: MovieRowProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -77,12 +84,15 @@ export function MovieRow({ title, movies, className = '', priority = false }: Mo
   }
 
   return (
-    <div className={`relative px-4 md:px-8 ${className}`}>
+    <section
+      className={`relative px-4 md:px-8 ${className}`}
+      aria-label={`${title} movie collection`}
+    >
       {/* Title */}
       <h2 className="mb-8 w-fit text-xl font-bold text-text-primary md:text-2xl ">{title}</h2>
 
       {/* Scroll Container */}
-      <div className="group relative">
+      <div className="group relative" role="region" aria-label={`Scrollable ${title} list`}>
         {/* Left Gradient Fade */}
         <div
           className={`absolute left-0 top-0 bottom-0 w-16 bg-linear-to-r from-primary to-transparent z-10 pointer-events-none transition-opacity ${
@@ -94,8 +104,9 @@ export function MovieRow({ title, movies, className = '', priority = false }: Mo
         {showLeftArrow && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-12 w-12 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 hover:scale-110"
-            aria-label="Scroll left"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-12 w-12 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 hover:scale-110 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label={`Scroll ${title} left`}
+            title="Previous movies"
           >
             <svg
               className="h-6 w-6"
@@ -120,15 +131,19 @@ export function MovieRow({ title, movies, className = '', priority = false }: Mo
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          {movies.map((movie, index) => (
-            <div
-              key={movie.id}
-              className="flex-none w-40 sm:w-48 md:w-56"
-              style={{ scrollSnapAlign: 'start' }}
-            >
-              <MovieCard movie={movie} priority={priority && index < 5} />
-            </div>
-          ))}
+          {movies.map((movie, index) => {
+            const progress = progressMap?.[movie.id];
+
+            return (
+              <div
+                key={movie.id}
+                className="flex-none w-40 sm:w-48 md:w-56"
+                style={{ scrollSnapAlign: 'start' }}
+              >
+                <MovieCard movie={movie} priority={priority && index < 5} progress={progress} />
+              </div>
+            );
+          })}
         </div>
 
         {/* Right Gradient Fade */}
@@ -142,8 +157,9 @@ export function MovieRow({ title, movies, className = '', priority = false }: Mo
         {showRightArrow && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-12 w-12 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 hover:scale-110"
-            aria-label="Scroll right"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-12 w-12 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 hover:scale-110 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label={`Scroll ${title} right`}
+            title="Next movies"
           >
             <svg
               className="h-6 w-6"
@@ -159,6 +175,6 @@ export function MovieRow({ title, movies, className = '', priority = false }: Mo
           </button>
         )}
       </div>
-    </div>
+    </section>
   );
 }

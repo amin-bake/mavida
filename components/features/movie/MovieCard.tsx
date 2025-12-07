@@ -13,17 +13,20 @@ import { getPosterUrl } from '@/lib/tmdb/images';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
 import { queryKeys } from '@/lib/queryKeys';
 import { getMovieDetails } from '@/services/tmdb';
+import { useToast } from '@/contexts/ToastContext';
 import type { Movie } from '@/types/movie';
 
 interface MovieCardProps {
   movie: Movie;
   className?: string;
   priority?: boolean; // For above-the-fold images
+  progress?: number; // Watch progress (0-100) for Continue Watching
 }
 
-export function MovieCard({ movie, className = '', priority = false }: MovieCardProps) {
+export function MovieCard({ movie, className = '', priority = false, progress }: MovieCardProps) {
   const [imageError, setImageError] = useState(false);
   const queryClient = useQueryClient();
+  const toast = useToast();
   const posterUrl = getPosterUrl(movie.posterPath, 'lg');
 
   const { isFavorite, toggleFavorite } = useUserPreferencesStore();
@@ -43,18 +46,26 @@ export function MovieCard({ movie, className = '', priority = false }: MovieCard
     e.preventDefault();
     e.stopPropagation();
     toggleFavorite(movie);
+
+    // Show toast notification
+    if (isMovieFavorite) {
+      toast.info('Removed from My List', `${movie.title} has been removed from your list`);
+    } else {
+      toast.success('Added to My List', `${movie.title} has been added to your list`);
+    }
   };
 
   return (
     <Link
       href={`/movie/${movie.id}`}
-      className={`group relative block overflow-hidden rounded-md bg-card transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg ${className}`}
+      className={`group relative block overflow-hidden rounded-md bg-card transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
       onMouseEnter={handlePrefetch}
+      aria-label={`View details for ${movie.title}`}
     >
       {/* Favorite Button */}
       <button
         onClick={handleFavoriteClick}
-        className="absolute top-3 right-3 z-10 p-2.5 min-h-11 min-w-11 rounded-full bg-black/70 backdrop-blur-sm transition-all duration-200 ease-in-out hover:bg-black/90 hover:scale-110 shadow-lg active:scale-95"
+        className="absolute top-3 right-3 z-10 p-2.5 min-h-11 min-w-11 rounded-full bg-black/70 backdrop-blur-sm transition-all duration-200 ease-in-out hover:bg-black/90 hover:scale-110 shadow-lg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         aria-label={isMovieFavorite ? 'Remove from favorites' : 'Add to favorites'}
       >
         <svg
@@ -73,6 +84,21 @@ export function MovieCard({ movie, className = '', priority = false }: MovieCard
 
       {/* Poster Image */}
       <div className="relative aspect-2/3 w-full">
+        {/* Progress Bar - shown when progress is provided */}
+        {progress !== undefined && progress > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 h-2 bg-black/80 backdrop-blur-sm">
+            <div
+              className="h-full bg-red-600 transition-all duration-300"
+              style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${Math.round(progress)}% watched`}
+            />
+          </div>
+        )}
+
         {posterUrl && !imageError ? (
           <Image
             src={posterUrl}

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTrendingMovies } from '@/hooks';
 import { getBackdropUrl } from '@/lib/tmdb/images';
-import { Button } from '@/components/ui';
+import { Button, MovieHeroSkeleton, InlineErrorFallback } from '@/components/ui';
 import { Movie } from '@/types/movie';
 
 interface MovieHeroProps {
@@ -30,7 +30,7 @@ export function MovieHero({
   rotationInterval = 10000,
   className = '',
 }: MovieHeroProps) {
-  const { data, isLoading, isError } = useTrendingMovies('day', 1);
+  const { data, isLoading, isError, error, refetch } = useTrendingMovies('day', 1);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -93,30 +93,18 @@ export function MovieHero({
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="relative h-[85vh] w-full animate-pulse bg-surface-secondary">
-        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 lg:p-16">
-          <div className="h-12 w-2/3 rounded bg-surface-tertiary mb-4" />
-          <div className="h-6 w-1/2 rounded bg-surface-tertiary mb-6" />
-          <div className="flex gap-3">
-            <div className="h-12 w-32 rounded bg-surface-tertiary" />
-            <div className="h-12 w-32 rounded bg-surface-tertiary" />
-          </div>
-        </div>
-      </div>
-    );
+    return <MovieHeroSkeleton />;
   }
 
   // Error state
   if (isError || !currentMovie) {
     return (
-      <div className="relative h-[85vh] w-full bg-surface-secondary flex items-center justify-center">
-        <div className="text-center px-4">
-          <p className="text-xl text-text-secondary mb-4">Unable to load featured movies</p>
-          <Button variant="default">
-            <Link href="/search">Browse Movies</Link>
-          </Button>
-        </div>
+      <div className="relative h-[85vh] w-full bg-card flex items-center justify-center px-4">
+        <InlineErrorFallback
+          error={error as Error}
+          onRetry={() => refetch()}
+          message="Unable to load featured movies"
+        />
       </div>
     );
   }
@@ -125,11 +113,14 @@ export function MovieHero({
   const rating = currentMovie.rating.toFixed(1);
 
   return (
-    <div
+    <section
       className={`relative h-[95vh] w-full overflow-hidden group ${className}`}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      role="region"
+      aria-label="Featured movie"
+      aria-roledescription="carousel"
     >
       {/* Backdrop Image */}
       {backdropUrl && (
@@ -236,8 +227,9 @@ export function MovieHero({
           {/* Previous Button */}
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full transition-all opacity-0 hover:opacity-100 group-hover:opacity-100"
-            aria-label="Previous movie"
+            className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full transition-all opacity-0 hover:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label="Previous featured movie"
+            title="Previous"
           >
             <svg
               className="w-6 h-6 text-white"
@@ -253,8 +245,9 @@ export function MovieHero({
           {/* Next Button */}
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full transition-all opacity-0 hover:opacity-100 group-hover:opacity-100"
-            aria-label="Next movie"
+            className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full transition-all opacity-0 hover:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label="Next featured movie"
+            title="Next"
           >
             <svg
               className="w-6 h-6 text-white"
@@ -271,19 +264,27 @@ export function MovieHero({
 
       {/* Rotation Indicators */}
       {autoRotate && movies.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 md:bottom-8 flex gap-2 pt-4">
+        <div
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 md:bottom-8 flex gap-2 pt-4"
+          role="tablist"
+          aria-label="Movie carousel indicators"
+        >
           {movies.map((_movie, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`h-3 transition-all duration-300 rounded-full ${
+              className={`h-3 transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                 index === currentIndex ? 'w-8 bg-white' : 'w-3 bg-white/50 hover:bg-white/75'
               }`}
-              aria-label={`View movie ${index + 1}`}
+              role="tab"
+              aria-label={`View featured movie ${index + 1} of ${movies.length}`}
+              aria-selected={index === currentIndex}
+              aria-controls={`hero-movie-${index}`}
+              title={movies[index]?.title || `Movie ${index + 1}`}
             />
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
