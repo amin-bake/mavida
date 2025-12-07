@@ -5,10 +5,10 @@ import {
   usePopularMovies,
   useTopRatedMovies,
   useNowPlayingMovies,
+  useContinueWatching,
 } from '@/hooks';
 import { MovieHero, MovieRow } from '@/components/features/movie';
 import { Skeleton } from '@/components/ui';
-import { useUserPreferencesStore } from '@/stores';
 
 /**
  * Homepage
@@ -33,15 +33,9 @@ export default function HomePage() {
     error: nowPlayingError,
   } = useNowPlayingMovies(1);
 
-  // Get watch history for "Continue Watching" row
-  const watchHistory = useUserPreferencesStore((state) => state.watchHistory);
-
-  // Note: Continue Watching will be implemented when movie detail pages are available
-  // For now, we'll skip this row as we need to fetch movies by ID
-  // const continueWatchingMovies = watchHistory
-  //   .filter((item) => item.progress < 90)
-  //   .sort((a, b) => b.timestamp - a.timestamp)
-  //   .slice(0, 20);
+  // Get Continue Watching items with movie details
+  const { items: continueWatchingItems, isLoading: continueWatchingLoading } =
+    useContinueWatching();
 
   return (
     <div className="min-h-screen">
@@ -50,8 +44,23 @@ export default function HomePage() {
 
       {/* Movie Rows - with top padding */}
       <div className="relative z-10 flex flex-col gap-16 pb-20 pt-6">
-        {/* Continue Watching Row - Will be implemented in Phase 5 */}
-        {/* TODO: Implement Continue Watching with movie detail fetch */}
+        {/* Continue Watching Row */}
+        {continueWatchingLoading ? (
+          <div className="px-4 md:px-8">
+            <Skeleton className="h-8 w-48 mb-4" />
+            <div className="flex gap-4 overflow-hidden">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-60 w-40 shrink-0" />
+              ))}
+            </div>
+          </div>
+        ) : continueWatchingItems.length > 0 ? (
+          <MovieRow
+            title="Continue Watching"
+            movies={continueWatchingItems.map((item) => item.movie)}
+            priority={true}
+          />
+        ) : null}
 
         {/* Trending Now Row */}
         {trendingLoading ? (
@@ -64,7 +73,11 @@ export default function HomePage() {
             </div>
           </div>
         ) : trendingData?.movies && trendingData.movies.length > 0 ? (
-          <MovieRow title="Trending Now" movies={trendingData.movies} priority={true} />
+          <MovieRow
+            title="Trending Now"
+            movies={trendingData.movies}
+            priority={continueWatchingItems.length === 0}
+          />
         ) : null}
 
         {/* Now Playing Row */}
