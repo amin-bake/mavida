@@ -193,12 +193,12 @@ export function EmptyStateFallback({
   actionLabel?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center">
+    <div className="flex flex-col items-center justify-center gap-4 p-12 text-center">
       <Icon className="w-12 h-12 mb-4 text-muted-foreground" aria-hidden="true" />
       <h3 className="text-xl font-semibold text-foreground mb-2">{title}</h3>
       <p className="text-muted-foreground mb-6 max-w-md">{message}</p>
       {action && actionLabel && (
-        <Button onClick={action} variant="outline">
+        <Button onClick={action} variant="outline" className='cursor-pointer hover:bg-accent-hover'>
           {actionLabel}
         </Button>
       )}

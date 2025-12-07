@@ -19,10 +19,10 @@ export default function MyListPage() {
       <div className="container mx-auto px-4 md:px-8 py-12">
         {/* Page Header */}
         <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">My List</h1>
+          {/* <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">My List</h1> */}
           <p className="text-lg text-muted-foreground">
             {favorites.length === 0
-              ? 'Your favorite movies will appear here'
+              ? ''
               : `${favorites.length} ${favorites.length === 1 ? 'movie' : 'movies'} in your list`}
           </p>
         </div>

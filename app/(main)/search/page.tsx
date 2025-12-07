@@ -6,13 +6,14 @@ import { SearchBar } from '@/components/features/search/SearchBar';
 import { SearchFilters } from '@/components/features/search/SearchFilters';
 import { MovieGrid } from '@/components/features/movie/MovieGrid';
 import { useSearchMovies } from '@/hooks/useMovies';
-import { MovieGridSkeleton, ErrorFallback, EmptyStateFallback } from '@/components/ui';
+import { MovieGridSkeleton, ErrorFallback, EmptyStateFallback, Button } from '@/components/ui';
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
 
   const [query, setQuery] = useState(initialQuery);
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     year: '',
     genre: '',
@@ -21,17 +22,36 @@ function SearchContent() {
 
   // Fetch search results
   const { data, isLoading, isError, error, refetch } = useSearchMovies(query, {
-    page: 1,
+    page,
     year: filters.year ? parseInt(filters.year) : undefined,
   });
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery);
+    setPage(1); // Reset to first page on new search
   };
 
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
+    setPage(1); // Reset to first page when filters change
   };
+
+  const handleLoadMore = () => {
+    setPage((prev) => prev + 1);
+  };
+
+  const handlePreviousPage = () => {
+    setPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    if (data && page < data.totalPages) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  const hasMorePages = data && page < data.totalPages;
+  const hasPreviousPage = page > 1;
 
   return (
     <div className="container mx-auto px-4 py-8 pt-24">
@@ -88,10 +108,84 @@ function SearchContent() {
           />
         ) : data && data.movies.length > 0 ? (
           <div>
-            <div className="mb-4 text-text-secondary">
+            <div className="mb-4 text-muted-foreground">
               Found {data.totalResults.toLocaleString()} results for &ldquo;{query}&rdquo;
             </div>
             <MovieGrid movies={data.movies} />
+
+            {/* Pagination Controls */}
+            <div className="mt-12 space-y-6">
+              {/* Load More Button (Progressive Loading) */}
+              {hasMorePages && (
+                <div className="flex justify-center">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleLoadMore}
+                    className="min-w-[200px]"
+                  >
+                    Load More Results
+                  </Button>
+                </div>
+              )}
+
+              {/* Page Navigation */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border">
+                {/* Previous Button */}
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousPage}
+                  disabled={!hasPreviousPage}
+                  className="w-full sm:w-auto"
+                >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                  Previous Page
+                </Button>
+
+                {/* Page Info */}
+                <div className="text-sm text-muted-foreground">
+                  Page <span className="font-semibold text-foreground">{page}</span> of{' '}
+                  <span className="font-semibold text-foreground">{data.totalPages}</span>
+                  {' • '}
+                  Showing {data.movies.length} of {data.totalResults.toLocaleString()} results
+                </div>
+
+                {/* Next Button */}
+                <Button
+                  variant="outline"
+                  onClick={handleNextPage}
+                  disabled={!hasMorePages}
+                  className="w-full sm:w-auto"
+                >
+                  Next Page
+                  <svg
+                    className="w-5 h-5 ml-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </Button>
+              </div>
+            </div>
           </div>
         ) : (
           <EmptyStateFallback
