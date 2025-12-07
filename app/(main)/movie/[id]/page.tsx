@@ -22,7 +22,7 @@ export default function MovieDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-20">
         <div className="relative h-[70vh] animate-pulse bg-card" />
         <div className="container mx-auto px-4 py-8 flex flex-col gap-4">
           <div className="h-12 w-2/3 bg-card rounded-md animate-pulse" />
@@ -55,7 +55,7 @@ export default function MovieDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Backdrop Hero Section */}
-      <div className="relative h-[70vh] overflow-hidden">
+      <div className="relative h-[95vh] overflow-hidden">
         {backdropUrl && (
           <>
             <Image
@@ -66,9 +66,11 @@ export default function MovieDetailPage() {
               priority
               sizes="100vw"
             />
-            {/* Gradient Overlays */}
-            <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent" />
-            <div className="absolute inset-0 bg-linear-to-r from-background/80 via-transparent to-transparent" />
+            {/* Gradient Overlays - matching hero design */}
+            {/* Top gradient for navbar area */}
+            <div className="absolute top-0 left-0 right-0 h-20 bg-linear-to-b from-black/80 via-black/30 to-black/0 blur-in-xl" />
+            {/* Content area gradient with soft edges */}
+            <div className="absolute bottom-0 left-0 w-[50%] h-[65%] bg-linear-to-tr from-black/60 via-black/20 to-transparent blur-2xl" />
           </>
         )}
 
@@ -131,15 +133,20 @@ export default function MovieDetailPage() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-4 pt-4">
-                  <Button size="lg" onClick={() => router.push(`/movie/${movieId}/watch`)}>
+                  <Button
+                    size="lg"
+                    className="shadow-xl"
+                    onClick={() => router.push(`/movie/${movieId}/watch`)}
+                  >
                     <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
                     </svg>
                     Watch Now
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="glass"
                     size="lg"
+                    className="shadow-xl"
                     onClick={() => movie && toggleFavorite(movie)}
                   >
                     {isFavorite ? (
@@ -190,7 +197,7 @@ export default function MovieDetailPage() {
                 return (
                   <div key={actor.id} className="flex flex-col gap-2">
                     {profileUrl ? (
-                      <div className="relative aspect-2/3 rounded-md overflow-hidden bg-card">
+                      <div className="relative aspect-2/3 rounded-md overflow-hidden bg-card size-32">
                         <Image
                           src={profileUrl}
                           alt={actor.name}
@@ -232,7 +239,7 @@ export default function MovieDetailPage() {
           <div className="flex flex-col gap-4">
             <h2 className="text-2xl font-bold text-foreground">Trailers</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {movie.videos.slice(0, 2).map((video) => (
+              {movie.videos.slice(0, 1).map((video) => (
                 <div key={video.id} className="aspect-video rounded-md overflow-hidden bg-card">
                   <iframe
                     src={`https://www.youtube.com/embed/${video.key}`}

@@ -9,10 +9,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-
-      {/* Main content with top padding to account for fixed navbar */}
-      <main className="flex-1 pt-16">{children}</main>
-
+      {/* Main content - Hero overflows to navbar, other pages need padding */}
+      <main className="flex-1">{children}</main>
       <Footer />
     </div>
   );

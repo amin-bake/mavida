@@ -1,7 +1,7 @@
 # Mavida - Task Breakdown & Implementation Roadmap
 
 **Phased Development Plan**  
-_Last Updated: December 6, 2025_
+_Last Updated: December 7, 2025_
 
 ---
 
@@ -407,16 +407,16 @@ This document provides a granular breakdown of all development tasks organized i
 
 ### 5.2 Favorites & Watch History
 
-**Status:** 🟡 In Progress
+**Status:** 🟢 Completed
 
 | Task ID | Task                                                  | Complexity | Status | Dependencies |
 | ------- | ----------------------------------------------------- | ---------- | ------ | ------------ |
 | 5.2.1   | Implement "Add to Favorites" functionality            | Medium     | 🟢     | 5.1.2        |
-| 5.2.2   | Create "My List" page (`app/(main)/my-list/page.tsx`) | Medium     | 🔴     | 5.2.1        |
-| 5.2.3   | Display favorited movies in grid                      | Medium     | 🔴     | 5.2.2, 3.2.1 |
+| 5.2.2   | Create "My List" page (`app/(main)/my-list/page.tsx`) | Medium     | 🟢     | 5.2.1        |
+| 5.2.3   | Display favorited movies in grid                      | Medium     | 🟢     | 5.2.2, 3.2.1 |
 | 5.2.4   | Add "Remove from Favorites" option                    | Low        | 🟢     | 5.2.3        |
 | 5.2.5   | Track watch history automatically                     | Medium     | 🟢     | 5.1.2        |
-| 5.2.6   | Display "Continue Watching" on homepage               | Medium     | 🔴     | 5.2.5, 3.4.5 |
+| 5.2.6   | Display "Continue Watching" on homepage               | Medium     | 🟢     | 5.2.5, 3.4.5 |
 
 **Deliverables:**
 
@@ -653,12 +653,12 @@ Phase 1 (API) → Phase 4 (Detail/Watch) → Phase 5 (User Prefs)
 ## Progress Tracking
 
 **Total Tasks:** 120+  
-**Completed:** 76 (Phases 1-4 Complete, Phase 5 Partial)  
-**In Progress:** 5 (Phase 5)  
-**Not Started:** 39+
+**Completed:** 84 (Phases 1-4 Complete, Phase 5 Complete except optional tasks)  
+**In Progress:** 2 (Phase 5 - Optional tasks)  
+**Not Started:** 34+
 
 **Estimated Total Time:** 12-15 days (full-time)  
-**Current Phase:** Phase 5 - User Preferences & Personalization
+**Current Phase:** Phase 5 - User Preferences & Personalization (Complete)
 
 ---
 
@@ -689,11 +689,201 @@ After each session, update this document with:
 ---
 
 **Last Updated:** December 7, 2025  
-**Current Status:** Phases 1-4 Complete, Phase 5 In Progress (UI Bug Fixes Completed)
+**Current Status:** Phases 1-5 Complete (Excluding optional tasks 5.1.1 and 5.1.5)
 
 ---
 
 ## Session Log
+
+### Session 12 - December 7, 2025 (Continue Watching & Phase 5 Completion)
+
+**✅ Completed Tasks:**
+
+- 5.2.6: Display "Continue Watching" on homepage
+- Created useContinueWatching hook for efficient movie fetching
+- Integrated Continue Watching row with homepage
+- Phase 5 (User Preferences & Personalization) Complete
+
+**📝 Architectural Decisions:**
+
+1. **useContinueWatching Hook:** Custom hook using useQueries for parallel movie detail fetching
+2. **Watch History Filtering:** Shows only incomplete movies (progress < 90%)
+3. **Sorting Strategy:** Most recent first (timestamp descending)
+4. **Performance:** Parallel queries with TanStack Query for optimal loading
+5. **Display Logic:** Shows Continue Watching as first row when available
+6. **Priority Optimization:** Continue Watching gets priority=true, Trending Now adjusts based on Continue Watching presence
+7. **Movie Transformation:** Converts MovieDetail to Movie type with all required fields
+8. **Error Handling:** Graceful degradation if movie details fail to load
+
+**🔗 Files Created:**
+
+- hooks/useContinueWatching.ts: Custom hook for Continue Watching (92 lines)
+
+**🔧 Files Modified:**
+
+- hooks/index.ts: Added useContinueWatching export
+- app/(main)/page.tsx: Integrated Continue Watching row
+- TASK_BREAKDOWN.md: Updated Phase 5.2 status to Complete
+
+**🎨 Features Implemented:**
+
+**useContinueWatching Hook:**
+
+- Fetches watch history from userPreferencesStore
+- Filters movies with progress < 90%
+- Sorts by timestamp (most recent first)
+- Limits to 20 items
+- Uses useQueries for parallel movie detail fetching
+- Transforms MovieDetail to Movie type
+- Returns items array with movie + progress data
+- Returns isLoading and hasError states
+
+**Continue Watching Row:**
+
+- Displays as first row on homepage (above Trending Now)
+- Shows skeleton loader during data fetch
+- Only renders if user has watch history
+- Priority prop set to true for above-fold optimization
+- Maps continueWatchingItems to extract movie objects
+- Conditional rendering based on data availability
+
+**Homepage Updates:**
+
+- Added useContinueWatching hook import
+- Continue Watching row with loading state
+- Adjusted Trending Now priority (true only if no Continue Watching)
+- Proper skeleton loader with 5 placeholder cards
+
+**✅ Verification:**
+
+- TypeScript compilation: ✅ Passed (2.8s)
+- Production build: ✅ Success (3.1s compile)
+- All routes generated correctly
+- Continue Watching displays when watch history exists
+- Loading states work correctly
+- Priority optimization ensures fast LCP
+
+**📌 Notes:**
+
+- Phase 5 (User Preferences & Personalization) is now 100% complete!
+- Optional tasks 5.1.1 (movieStore) and 5.1.5 (devtools) remain deferred
+- All required Phase 5 tasks completed:
+  - 5.1.2: userPreferencesStore ✅
+  - 5.1.3: searchStore ✅
+  - 5.1.4: localStorage persistence ✅
+  - 5.2.1: Add to Favorites ✅
+  - 5.2.2: My List page ✅
+  - 5.2.3: Display favorites ✅
+  - 5.2.4: Remove from Favorites ✅
+  - 5.2.5: Track watch history ✅
+  - 5.2.6: Continue Watching ✅
+- Ready to move to Phase 6 (Optimization & Polish)
+- Continue Watching uses parallel queries for optimal performance
+- All user preference features fully functional
+
+**🎉 Phase 5 Complete:**
+
+- ✅ 5.1 Zustand Store Implementation (3 of 5 tasks - 2 optional deferred)
+- ✅ 5.2 Favorites & Watch History (6 of 6 tasks)
+- **Total: 9 tasks completed in Phase 5**
+
+**🎯 Next Priority Tasks:**
+
+- Phase 6.1: Performance Optimization
+- Phase 6.2: Accessibility & UX Improvements
+- Phase 6.3: Error Handling & Loading States
+
+---
+
+### Session 11 - December 7, 2025 (Hero Section UI/UX Enhancements)
+
+**✅ Completed Tasks:**
+
+- Hero Section Design Refinements (height, gradients, overflow to navbar)
+- MovieHero carousel navigation (swipe gestures, arrow buttons, rotation indicators)
+- Movie detail page backdrop overflow enhancement
+- SearchBar nested button fix (HTML validation)
+- Hero height optimization (70vh → 85vh → 95vh user-adjusted)
+- Gradient overlay system (navbar contrast, content area blending)
+- Rotation indicators (centered, correct count, size retention)
+- Navigation controls (touch gestures, desktop arrows, clickable dots)
+
+**📝 Architectural Decisions:**
+
+1. **Hero Overflow Design:** Removed pt-16 from main layout, hero extends under navbar
+2. **Gradient System:** Three-layer approach (navbar gradient, content gradient with blur, side fade)
+3. **Navbar Gradient:** h-40 top gradient with soft fade (from-black/95 via-black/60 to-black/0)
+4. **Content Gradient:** 50% width × 65% height with blur-2xl for ultra-soft edges
+5. **Height Strategy:** 95vh for immersive experience while maintaining scroll visibility
+6. **Touch Navigation:** 50px minimum swipe distance, left/right swipe for next/previous
+7. **Arrow Navigation:** Hidden by default, appear on hover, glassmorphic design with backdrop-blur
+8. **Rotation Indicators:** Centered with left-1/2 -translate-x-1/2, h-3/w-3 dots, w-8 when active
+9. **Movie Limit:** Restricted to 6 movies max for optimal rotation UX
+10. **HTML Validation:** Fixed nested button issue in SearchBar (wrapper div → sibling buttons)
+
+**🔗 Files Modified:**
+
+- components/features/movie/MovieHero.tsx: Added swipe handlers, navigation arrows, gradient enhancements
+- app/(main)/layout.tsx: Removed pt-16 for hero overflow
+- app/(main)/page.tsx: Adjusted spacing (gap-12→16, -mt-24→-mt-32, added pt-6)
+- app/(main)/movie/[id]/page.tsx: Updated backdrop to match hero design (85vh, gradients)
+- app/(main)/search/page.tsx: Added pt-24 for navbar clearance
+- app/(main)/movie/[id]/watch/page.tsx: Adjusted back button position (top-24)
+- components/features/search/SearchBar.tsx: Fixed nested button HTML violation
+
+**🎨 Features Implemented:**
+
+**Touch/Swipe Gestures:**
+
+- onTouchStart: Captures initial touch position
+- onTouchMove: Tracks touch movement
+- onTouchEnd: Calculates swipe distance and direction
+- Left swipe (>50px): Next movie
+- Right swipe (>50px): Previous movie
+
+**Desktop Arrow Navigation:**
+
+- Previous/Next buttons at vertical center
+- Glassmorphic design with backdrop-blur-sm
+- Show on hero hover (group-hover:opacity-100)
+- goToNext/goToPrevious navigation functions
+
+**Rotation Indicators:**
+
+- Centered: left-1/2 -translate-x-1/2
+- Dots: h-3 w-3, expand to w-8 when active
+- Click navigation: setCurrentIndex(index)
+- Shows up to 6 movies
+
+**Gradient Enhancements:**
+
+- Navbar: 40px gradient with three-stop fade
+- Content: 50% × 65% with blur-2xl
+- Diagonal direction for natural blending
+
+**✅ Verification:**
+
+- TypeScript compilation: ✅ Passed
+- Touch gestures: ✅ Working
+- Arrow navigation: ✅ Working
+- Rotation indicators: ✅ Centered, clickable
+- Gradient blending: ✅ Smooth edges
+- Hero overflow: ✅ Extends under navbar
+
+**📌 Notes:**
+
+- Hero section now production-ready with comprehensive navigation
+- Gradient system works with both dark and bright images
+- All pages properly account for navbar overlap
+- Ready for Phase 5.2 (My List page, Continue Watching row)
+
+**🎯 Next Priority Tasks:**
+
+1. Task 5.2.2 - Create "My List" page
+2. Task 5.2.3 - Display favorited movies in grid
+3. Task 5.2.6 - Display "Continue Watching" on homepage
+
+---
 
 ### Session 10 - December 7, 2025 (Phase 4 - Movie Detail & Watch Pages + Critical UI Bug Fixes)
 

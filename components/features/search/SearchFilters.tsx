@@ -119,9 +119,7 @@ export function SearchFilters({ filters, onFilterChange }: SearchFiltersProps) {
 
       {/* Filters Grid */}
       <div
-        className={`${
-          isExpanded ? 'block' : 'hidden'
-        } flex flex-col gap-4 md:gap-0 md:grid md:grid-cols-4 md:gap-4`}
+        className={`${isExpanded ? 'block' : 'hidden'} flex flex-col gap-4 md:grid md:grid-cols-4`}
       >
         {/* Genre Filter */}
         <div>
