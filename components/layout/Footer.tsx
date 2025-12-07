@@ -28,8 +28,8 @@ export function Footer() {
     <footer className="bg-card mt-auto">
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-16">
         {/* <div className=" hidden grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4"> */}
-          {/* Brand Section */}
-          {/* <div className="flex flex-col gap-5">
+        {/* Brand Section */}
+        {/* <div className="flex flex-col gap-5">
             <Link href="/" className="inline-block">
               <span className="text-3xl font-bold text-primary tracking-tight">MAVIDA</span>
             </Link>
@@ -38,8 +38,8 @@ export function Footer() {
             </p>
           </div> */}
 
-          {/* Product Links */}
-          {/* <div>
+        {/* Product Links */}
+        {/* <div>
             <h3 className="text-base font-bold text-foreground mb-5">Product</h3>
             <ul className="flex flex-col gap-3">
               {footerLinks.product.map((link) => (
@@ -55,8 +55,8 @@ export function Footer() {
             </ul>
           </div> */}
 
-          {/* Company Links */}
-          {/* <div>
+        {/* Company Links */}
+        {/* <div>
             <h3 className="text-base font-bold text-foreground mb-5">Company</h3>
             <ul className="flex flex-col gap-3">
               {footerLinks.company.map((link) => (
@@ -72,8 +72,8 @@ export function Footer() {
             </ul>
           </div> */}
 
-          {/* Legal Links */}
-          {/* <div>
+        {/* Legal Links */}
+        {/* <div>
             <h3 className="text-base font-bold text-foreground mb-5">Legal</h3>
             <ul className="flex flex-col gap-3">
               {footerLinks.legal.map((link) => (
@@ -98,7 +98,7 @@ export function Footer() {
             </p>
             <div className="flex gap-8">
               <a
-                href="https://github.com"
+                href="https://github.com/amin-bake/mavida"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-all hover:scale-110 p-2"
