@@ -135,7 +135,7 @@ export class TMDBClient {
       const url = this.buildUrl(endpoint, params);
 
       try {
-        console.log('[TMDBClient] Making request to:', url);
+        // console.log('[TMDBClient] Making request to:', url);
 
         const response = await fetch(url, {
           method: 'GET',
@@ -160,7 +160,7 @@ export class TMDBClient {
         }
 
         const data: T = await response.json();
-        console.log('[TMDBClient] Success, received data');
+        // console.log('[TMDBClient] Success, received data');
         return data;
       } catch (error) {
         console.error('[TMDBClient] Request failed:', error);
