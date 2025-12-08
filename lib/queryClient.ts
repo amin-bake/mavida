@@ -24,7 +24,7 @@ const defaultQueryOptions: DefaultOptions = {
     // Refetch configuration
     refetchOnWindowFocus: false, // Don't refetch on window focus (better UX for video app)
     refetchOnReconnect: true, // Refetch when reconnecting
-    refetchOnMount: false, // Don't refetch on component mount if data is fresh
+    refetchOnMount: true, // Always refetch on mount to ensure fresh data on reload
 
     // Network mode
     networkMode: 'online',

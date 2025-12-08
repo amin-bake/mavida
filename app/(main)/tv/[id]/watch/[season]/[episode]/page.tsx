@@ -38,11 +38,17 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
   const [selectedSeason, setSelectedSeason] = useState(seasonNumber);
 
   // Fetch TV show and episode data
-  const { data: tvShow, isLoading: isLoadingShow, isError: isErrorShow } = useTVShow(tvId);
+  const {
+    data: tvShow,
+    isLoading: isLoadingShow,
+    isError: isErrorShow,
+    error: showError,
+  } = useTVShow(tvId);
   const {
     data: episodeDetails,
     isLoading: isLoadingEpisode,
     isError: isErrorEpisode,
+    error: episodeError,
   } = useTVEpisode(tvId, seasonNumber, episodeNumber);
 
   // Fetch season details for episode list
@@ -51,13 +57,51 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
     selectedSeason
   );
 
-  // Handle errors
-  if (isErrorShow || isErrorEpisode) {
-    notFound();
+  // Loading state - show loading while queries are in progress
+  if (isLoadingShow || isLoadingEpisode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-muted-foreground">Loading episode...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Loading state
-  if (isLoadingShow || isLoadingEpisode || !tvShow) {
+  // Handle errors - only show 404 if we actually got error responses
+  if (isErrorShow || isErrorEpisode) {
+    // Check if it's a 404 error
+    const is404 =
+      (showError as any)?.response?.status === 404 ||
+      (episodeError as any)?.response?.status === 404;
+
+    if (is404) {
+      notFound();
+    }
+
+    // For other errors, show an error message with retry
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center max-w-md px-4">
+          <div className="text-destructive text-5xl mb-2">⚠️</div>
+          <h2 className="text-xl font-bold">Failed to load episode</h2>
+          <p className="text-muted-foreground text-sm">
+            {(showError as Error)?.message || (episodeError as Error)?.message || 'Unknown error'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure data is loaded
+  if (!tvShow) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
