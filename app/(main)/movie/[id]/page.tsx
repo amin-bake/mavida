@@ -21,14 +21,13 @@ export default function MovieDetailPage() {
     refetch: refetchSimilar,
   } = useSimilarMovies(movieId, 1);
 
-  const favorites = useUserPreferencesStore((state) => state.favorites);
-  const toggleFavorite = useUserPreferencesStore((state) => state.toggleFavorite);
-  const isFavorite = movie ? favorites.some((fav) => fav.id === movie.id) : false;
+  const { isFavoriteItem, toggleFavoriteItem } = useUserPreferencesStore();
+  const isFavorite = isFavoriteItem(movieId, 'movie');
   const toast = useToast();
 
   const handleToggleFavorite = () => {
     if (movie) {
-      toggleFavorite(movie);
+      toggleFavoriteItem(movieId, 'movie');
       if (isFavorite) {
         toast.info('Removed from My List', `${movie.title} has been removed from your list`);
       } else {

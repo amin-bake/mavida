@@ -1,29 +1,22 @@
 /**
- * Movie Row Component
- * Horizontal scrolling row of movies with arrow navigation and gradient fades
+ * TV Show Row Component
+ * Horizontal scrolling row of TV shows with arrow navigation and gradient fades
  */
 
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { MediaCard } from '../media/MediaCard';
-import type { Movie } from '@/types/movie';
+import type { TVShow } from '@/types/tv';
 
-interface MovieRowProps {
+interface TVShowRowProps {
   title: string;
-  movies: Movie[];
+  tvShows: TVShow[];
   className?: string;
   priority?: boolean; // For above-the-fold rows
-  progressMap?: Record<number, number>; // Map of movie ID to progress percentage
 }
 
-export function MovieRow({
-  title,
-  movies,
-  className = '',
-  priority = false,
-  progressMap,
-}: MovieRowProps) {
+export function TVShowRow({ title, tvShows, className = '', priority = false }: TVShowRowProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -79,14 +72,14 @@ export function MovieRow({
     };
   }, []);
 
-  if (movies.length === 0) {
+  if (tvShows.length === 0) {
     return null;
   }
 
   return (
     <section
       className={`relative px-4 md:px-8 ${className}`}
-      aria-label={`${title} movie collection`}
+      aria-label={`${title} TV show collection`}
     >
       {/* Title */}
       <h2 className="mb-8 w-fit text-xl font-bold text-text-primary md:text-2xl ">{title}</h2>
@@ -98,82 +91,74 @@ export function MovieRow({
           className={`absolute left-0 top-0 bottom-0 w-16 bg-linear-to-r from-primary to-transparent z-10 pointer-events-none transition-opacity ${
             showLeftArrow ? 'opacity-100' : 'opacity-0'
           }`}
+          aria-hidden="true"
         />
-
-        {/* Left Arrow */}
-        {showLeftArrow && (
-          <button
-            onClick={() => scroll('left')}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-12 w-12 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 hover:scale-110 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label={`Scroll ${title} left`}
-            title="Previous movies"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        )}
-
-        {/* Scroll Container */}
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth mt-4"
-          style={{
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
-          }}
-        >
-          {movies.map((movie, index) => {
-            const progress = progressMap?.[movie.id];
-
-            return (
-              <div
-                key={movie.id}
-                className="flex-none w-40 sm:w-48 md:w-56"
-                style={{ scrollSnapAlign: 'start' }}
-              >
-                <MediaCard media={movie} priority={priority && index < 5} progress={progress} />
-              </div>
-            );
-          })}
-        </div>
 
         {/* Right Gradient Fade */}
         <div
           className={`absolute right-0 top-0 bottom-0 w-16 bg-linear-to-l from-primary to-transparent z-10 pointer-events-none transition-opacity ${
             showRightArrow ? 'opacity-100' : 'opacity-0'
           }`}
+          aria-hidden="true"
         />
 
-        {/* Right Arrow */}
-        {showRightArrow && (
+        {/* Left Arrow Button */}
+        {showLeftArrow && (
           <button
-            onClick={() => scroll('right')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-12 w-12 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 hover:scale-110 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label={`Scroll ${title} right`}
-            title="Next movies"
+            onClick={() => scroll('left')}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-20 w-10 bg-background/80 backdrop-blur-sm hover:bg-background/95 text-text-primary rounded-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label="Scroll left"
+            disabled={isScrolling}
           >
             <svg
-              className="h-6 w-6"
+              xmlns="http://www.w3.org/2000/svg"
               fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
               viewBox="0 0 24 24"
+              strokeWidth={2.5}
               stroke="currentColor"
+              className="w-6 h-6 mx-auto"
             >
-              <path d="M9 5l7 7-7 7" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
         )}
+
+        {/* Right Arrow Button */}
+        {showRightArrow && (
+          <button
+            onClick={() => scroll('right')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-20 w-10 bg-background/80 backdrop-blur-sm hover:bg-background/95 text-text-primary rounded-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label="Scroll right"
+            disabled={isScrolling}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2.5}
+              stroke="currentColor"
+              className="w-6 h-6 mx-auto"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        )}
+
+        {/* Cards Container */}
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {tvShows.map((tvShow, index) => (
+            <div
+              key={tvShow.id}
+              className="shrink-0 w-[calc(50%-8px)] sm:w-[calc(33.333%-11px)] md:w-[calc(25%-14px)] lg:w-[calc(20%-16px)]"
+            >
+              <MediaCard media={tvShow} priority={priority && index < 5} />
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

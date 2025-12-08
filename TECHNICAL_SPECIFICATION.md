@@ -1,19 +1,21 @@
 # Mavida - Technical Specification Document
 
-**Personal Movie Streaming Application**  
-_Version 1.0 | December 6, 2025_
+**Personal Movie & TV Show Streaming Application**  
+_Version 2.0 | December 8, 2025_
 
 ---
 
 ## 1. Executive Summary
 
-Mavida is a Netflix-inspired personal movie streaming application built with Next.js 16, featuring a modern, performant interface for browsing and watching movies. The application integrates TMDB for metadata and VidSrc API for video streaming.
+Mavida is a Netflix-inspired personal streaming application built with Next.js 16, featuring a modern, performant interface for browsing and watching movies and TV shows. The application integrates TMDB for metadata and VidSrc API for video streaming.
 
 ### Key Objectives
 
-- Create an intuitive, responsive movie browsing experience
+- Create an intuitive, responsive media browsing experience for movies and TV shows
 - Achieve optimal performance metrics (LCP < 2.5s, CLS < 0.1, FID < 100ms)
-- Implement seamless video playback with adaptive streaming
+- Implement seamless video playback with adaptive streaming for both movies and episodes
+- Support season/episode navigation for TV shows
+- Track watch progress at episode level for TV series
 - Maintain strict TypeScript typing and code quality standards
 
 ---
@@ -78,7 +80,6 @@ stores/
 ### Performance Optimization
 
 - **Redis** (Optional - Phase 2)
-
   - Server-side caching for API responses
   - Rate limiting for TMDB API
   - Session storage (if auth added)
@@ -92,19 +93,21 @@ stores/
 
 ## 3. API Integration Architecture
 
-### 3.1 Movie Metadata - TMDB API
+### 3.1 Media Metadata - TMDB API
 
 **Selected API:** The Movie Database (TMDB)  
 **Rationale:**
 
-- Comprehensive metadata (titles, posters, descriptions, ratings, cast)
+- Comprehensive metadata for movies and TV shows (titles, posters, descriptions, ratings, cast)
+- Episode-level data for TV series (air dates, episode titles, thumbnails)
+- Season information (number of episodes, air dates, overviews)
 - 40+ language support
 - Free tier: 10,000 requests/day (sufficient for personal use)
 - Excellent documentation and TypeScript support
 
 **Base URL:** `https://api.themoviedb.org/3`
 
-**Key Endpoints:**
+**Key Endpoints - Movies:**
 
 ```typescript
 // Discovery & Trending
@@ -121,7 +124,30 @@ GET / movie / { movie_id } / recommendations; // Related movies
 
 // Search
 GET / search / movie; // Search by title
-GET / search / multi; // Search all content
+GET / search / multi; // Search all content (movies + TV)
+```
+
+**Key Endpoints - TV Shows:**
+
+```typescript
+// Discovery & Trending
+GET / trending / tv / { time_window }; // Daily/weekly trending shows
+GET / tv / popular; // Popular TV shows
+GET / tv / top_rated; // Top rated shows
+GET / tv / airing_today; // Shows airing today
+GET / tv / on_the_air; // Currently airing shows
+GET / discover / tv; // Advanced filtering
+
+// TV Show Details
+GET / tv / { tv_id }; // Full show details
+GET / tv / { tv_id } / season / { season_number }; // Season details
+GET / tv / { tv_id } / season / { season_number } / episode / { episode_number }; // Episode details
+GET / tv / { tv_id } / videos; // Trailers
+GET / tv / { tv_id } / credits; // Cast & crew
+GET / tv / { tv_id } / recommendations; // Similar shows
+
+// Search
+GET / search / tv; // Search TV shows
 ```
 
 **Implementation Pattern:**
@@ -129,36 +155,74 @@ GET / search / multi; // Search all content
 ```typescript
 // services/tmdb/client.ts
 export class TMDBClient {
-  private readonly baseURL = "https://api.themoviedb.org/3";
+  private readonly baseURL = 'https://api.themoviedb.org/3';
   private readonly apiKey = process.env.TMDB_API_KEY;
 
+  // Movie methods
   async getMovie(id: number): Promise<Movie> {
     /* ... */
   }
   async searchMovies(query: string): Promise<MovieSearchResult> {
     /* ... */
   }
-  // ... other methods
+
+  // TV Show methods
+  async getTVShow(id: number): Promise<TVShow> {
+    /* ... */
+  }
+  async getTVSeason(tvId: number, seasonNumber: number): Promise<TVSeason> {
+    /* ... */
+  }
+  async getTVEpisode(
+    tvId: number,
+    seasonNumber: number,
+    episodeNumber: number
+  ): Promise<TVEpisode> {
+    /* ... */
+  }
+  async searchTVShows(query: string): Promise<TVShowSearchResult> {
+    /* ... */
+  }
+
+  // Multi-search (movies + TV shows)
+  async searchMulti(query: string): Promise<MultiSearchResult> {
+    /* ... */
+  }
 }
 ```
 
 ### 3.2 Video Streaming - VidSrc API
 
 **Selected API:** VidSrc.me  
-**Base URL:** `https://vidsrc.me/embed/movie/{tmdb_id}`
+**Base URLs:**
+
+- **Movies:** `https://vidsrc.me/embed/movie/{tmdb_id}`
+- **TV Shows:** `https://vidsrcme.ru/api/tv/{tmdb_id}/{season}/{episode}`
 
 **Implementation:**
 
 ```typescript
 // services/video/player.ts
-export const getStreamingUrl = (tmdbId: number): string => {
-  return `https://vidsrc.me/embed/movie/${tmdbId}`;
+export const getStreamingUrl = (
+  mediaType: 'movie' | 'tv',
+  tmdbId: number,
+  season?: number,
+  episode?: number
+): string => {
+  if (mediaType === 'movie') {
+    return `https://vidsrc.me/embed/movie/${tmdbId}`;
+  } else {
+    if (season === undefined || episode === undefined) {
+      throw new Error('Season and episode are required for TV shows');
+    }
+    return `https://vidsrcme.ru/api/tv/${tmdbId}/${season}/${episode}`;
+  }
 };
 
 // Alternative sources (fallback)
 const STREAMING_SOURCES = {
-  primary: "vidsrc.me",
-  fallback: "vidsrc.xyz", // Backup if primary fails
+  primary: 'vidsrc.me',
+  fallback: 'vidsrc.xyz', // Backup if primary fails
 };
 ```
 
@@ -166,6 +230,7 @@ const STREAMING_SOURCES = {
 
 - Embed VidSrc player via iframe (simplest approach)
 - Custom controls overlay (optional Phase 2)
+- Episode navigation controls for TV shows (Previous/Next episode buttons)
 - Watch progress tracking with localStorage
 - Resume playback from last position
 
@@ -181,21 +246,36 @@ mavida/
 │   ├── (auth)/                  # Auth group (future)
 │   ├── (main)/                  # Main app routes
 │   │   ├── layout.tsx           # Main layout with nav
-│   │   ├── page.tsx             # Homepage (trending movies)
+│   │   ├── page.tsx             # Homepage (trending content)
 │   │   ├── browse/              # Browse by category
 │   │   │   └── page.tsx
-│   │   ├── search/              # Search results
+│   │   ├── search/              # Search results (movies + TV)
+│   │   │   └── page.tsx
+│   │   ├── movies/              # Movies browse page
+│   │   │   └── page.tsx
+│   │   ├── tv/                  # TV shows browse page
 │   │   │   └── page.tsx
 │   │   ├── movie/               # Movie details
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx
-│   │   │       └── watch/       # Video player page
+│   │   │       └── watch/       # Movie player page
 │   │   │           └── page.tsx
-│   │   └── my-list/             # User's saved movies
+│   │   ├── tv/                  # TV show details
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx     # Show overview
+│   │   │       └── watch/       # Episode player
+│   │   │           └── [season]/
+│   │   │               └── [episode]/
+│   │   │                   └── page.tsx
+│   │   └── my-list/             # User's saved content
 │   │       └── page.tsx
 │   ├── api/                     # API routes
 │   │   ├── movies/
 │   │   │   ├── [id]/route.ts
+│   │   │   └── trending/route.ts
+│   │   ├── tv/
+│   │   │   ├── [id]/route.ts
+│   │   │   ├── [id]/season/[season]/route.ts
 │   │   │   └── trending/route.ts
 │   │   └── search/route.ts
 │   ├── globals.css              # Global styles
@@ -214,15 +294,22 @@ mavida/
 │   │   ├── Footer.tsx
 │   │   └── Sidebar.tsx
 │   └── features/                # Feature-specific components
+│       ├── media/               # Shared movie/TV components
+│       │   ├── MediaCard.tsx    # Renamed from MovieCard
+│       │   ├── MediaGrid.tsx
+│       │   ├── MediaRow.tsx
+│       │   └── MediaHero.tsx
 │       ├── movie/
-│       │   ├── MovieCard.tsx
-│       │   ├── MovieGrid.tsx
-│       │   ├── MovieRow.tsx
-│       │   ├── MovieHero.tsx
 │       │   └── MoviePlayer.tsx
+│       ├── tv/
+│       │   ├── TVPlayer.tsx
+│       │   ├── SeasonSelector.tsx
+│       │   ├── EpisodeGrid.tsx
+│       │   └── EpisodeCard.tsx
 │       └── search/
 │           ├── SearchBar.tsx
-│           └── SearchFilters.tsx
+│           ├── SearchFilters.tsx
+│           └── MediaTypeToggle.tsx
 │
 ├── lib/                         # Utilities & config
 │   ├── utils.ts                 # Utility functions
@@ -234,23 +321,31 @@ mavida/
 │   ├── tmdb/
 │   │   ├── client.ts            # TMDB API client
 │   │   ├── queries.ts           # React Query hooks
+│   │   ├── movie.queries.ts     # Movie-specific hooks
+│   │   ├── tv.queries.ts        # TV show-specific hooks
 │   │   └── types.ts             # TMDB-specific types
 │   └── video/
 │       ├── player.ts            # Video player logic
 │       └── types.ts
 │
 ├── stores/                      # Zustand stores
-│   ├── movieStore.ts
-│   ├── userPreferencesStore.ts
-│   └── searchStore.ts
+│   ├── mediaStore.ts            # Current media, player state
+│   ├── userPreferencesStore.ts  # Watch history, favorites
+│   ├── searchStore.ts           # Search state, filters
+│   └── tvStore.ts               # TV-specific state (current season/episode)
 │
 ├── types/                       # TypeScript definitions
 │   ├── movie.ts                 # Movie interfaces
+│   ├── tv.ts                    # TV show, season, episode types
+│   ├── media.ts                 # Shared media types (union types)
 │   ├── user.ts                  # User preferences
 │   └── api.ts                   # API response types
 │
 ├── hooks/                       # Custom React hooks
 │   ├── useMovies.ts
+│   ├── useTVShows.ts
+│   ├── useSeasons.ts
+│   ├── useEpisodes.ts
 │   ├── useSearch.ts
 │   ├── useLocalStorage.ts
 │   └── useWatchHistory.ts
@@ -300,15 +395,22 @@ mavida/
 
 **Zustand Stores:**
 
-1. **Movie Store** - Current playback state
+1. **Media Store** - Current playback state (unified for movies and TV)
 
    ```typescript
-   interface MovieState {
-     currentMovie: Movie | null;
+   interface MediaState {
+     currentMedia: Movie | TVShow | null;
+     mediaType: 'movie' | 'tv' | null;
      isPlaying: boolean;
      currentTime: number;
-     setCurrentMovie: (movie: Movie) => void;
+
+     // TV-specific state
+     currentSeason?: number;
+     currentEpisode?: number;
+
+     setCurrentMedia: (media: Movie | TVShow, type: 'movie' | 'tv') => void;
      updatePlaybackTime: (time: number) => void;
+     setEpisode: (season: number, episode: number) => void;
    }
    ```
 
@@ -316,12 +418,28 @@ mavida/
 
    ```typescript
    interface UserPreferencesState {
-     favorites: number[]; // Movie IDs
+     favorites: FavoriteItem[]; // { id: number, type: 'movie' | 'tv' }
      watchHistory: WatchHistoryItem[];
      continueWatching: ContinueWatchingItem[];
-     addFavorite: (movieId: number) => void;
-     removeFavorite: (movieId: number) => void;
-     updateWatchProgress: (movieId: number, progress: number) => void;
+
+     addFavorite: (id: number, type: 'movie' | 'tv') => void;
+     removeFavorite: (id: number, type: 'movie' | 'tv') => void;
+     updateWatchProgress: (
+       id: number,
+       type: 'movie' | 'tv',
+       progress: number,
+       season?: number,
+       episode?: number
+     ) => void;
+   }
+
+   interface WatchHistoryItem {
+     id: number;
+     type: 'movie' | 'tv';
+     timestamp: number;
+     progress: number;
+     season?: number; // For TV shows
+     episode?: number; // For TV shows
    }
    ```
 
@@ -329,9 +447,11 @@ mavida/
    ```typescript
    interface SearchState {
      query: string;
+     mediaType: 'all' | 'movie' | 'tv'; // Filter by content type
      filters: SearchFilters;
      recentSearches: string[];
      setQuery: (query: string) => void;
+     setMediaType: (type: 'all' | 'movie' | 'tv') => void;
      addRecentSearch: (query: string) => void;
    }
    ```
@@ -340,6 +460,7 @@ mavida/
 
 - Use `zustand/middleware/persist` with localStorage
 - Sync watch history and favorites across sessions
+- Store episode-level progress for TV shows
 - Clear sensitive data on logout (if auth added)
 
 ---
@@ -350,7 +471,7 @@ mavida/
 
 ```typescript
 // lib/queryClient.ts
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient } from '@tanstack/react-query';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -366,12 +487,11 @@ export const queryClient = new QueryClient({
 // Query Keys
 export const queryKeys = {
   movies: {
-    all: ["movies"] as const,
-    trending: (timeWindow: string) =>
-      ["movies", "trending", timeWindow] as const,
-    popular: (page: number) => ["movies", "popular", page] as const,
-    detail: (id: number) => ["movies", "detail", id] as const,
-    search: (query: string) => ["movies", "search", query] as const,
+    all: ['movies'] as const,
+    trending: (timeWindow: string) => ['movies', 'trending', timeWindow] as const,
+    popular: (page: number) => ['movies', 'popular', page] as const,
+    detail: (id: number) => ['movies', 'detail', id] as const,
+    search: (query: string) => ['movies', 'search', query] as const,
   },
 };
 ```
@@ -380,7 +500,7 @@ export const queryKeys = {
 
 ```typescript
 // hooks/useMovies.ts
-export const useTrendingMovies = (timeWindow: "day" | "week" = "day") => {
+export const useTrendingMovies = (timeWindow: 'day' | 'week' = 'day') => {
   return useQuery({
     queryKey: queryKeys.movies.trending(timeWindow),
     queryFn: () => tmdbClient.getTrending(timeWindow),
@@ -395,6 +515,39 @@ export const useMovieDetail = (id: number) => {
     staleTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 };
+
+// hooks/useTVShows.ts
+export const useTrendingTVShows = (timeWindow: 'day' | 'week' = 'day') => {
+  return useQuery({
+    queryKey: queryKeys.tv.trending(timeWindow),
+    queryFn: () => tmdbClient.getTrendingTV(timeWindow),
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+};
+
+export const useTVShowDetail = (id: number) => {
+  return useQuery({
+    queryKey: queryKeys.tv.detail(id),
+    queryFn: () => tmdbClient.getTVShow(id),
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
+};
+
+export const useTVSeason = (tvId: number, seasonNumber: number) => {
+  return useQuery({
+    queryKey: queryKeys.tv.season(tvId, seasonNumber),
+    queryFn: () => tmdbClient.getTVSeason(tvId, seasonNumber),
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
+};
+
+export const useTVEpisode = (tvId: number, seasonNumber: number, episodeNumber: number) => {
+  return useQuery({
+    queryKey: queryKeys.tv.episode(tvId, seasonNumber, episodeNumber),
+    queryFn: () => tmdbClient.getTVEpisode(tvId, seasonNumber, episodeNumber),
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
+};
 ```
 
 ---
@@ -403,12 +556,12 @@ export const useMovieDetail = (id: number) => {
 
 ### Strategy: Embedded Player (Phase 1)
 
-**Approach:** Use VidSrc embed URLs in an iframe
+**Approach:** Use VidSrc embed URLs in an iframe for both movies and TV shows
 
 - **Pros:** No complex video logic needed, adaptive streaming handled by VidSrc
 - **Cons:** Limited customization of player controls
 
-**Implementation:**
+**Implementation - Movies:**
 
 ```typescript
 // components/features/movie/MoviePlayer.tsx
@@ -428,17 +581,77 @@ export function MoviePlayer({ tmdbId }: { tmdbId: number }) {
 }
 ```
 
+**Implementation - TV Shows:**
+
+```typescript
+// components/features/tv/TVPlayer.tsx
+interface TVPlayerProps {
+  tmdbId: number;
+  season: number;
+  episode: number;
+  onEpisodeChange?: (season: number, episode: number) => void;
+}
+
+export function TVPlayer({
+  tmdbId,
+  season,
+  episode,
+  onEpisodeChange
+}: TVPlayerProps) {
+  const streamUrl = `https://vidsrcme.ru/api/tv/${tmdbId}/${season}/${episode}`;
+
+  return (
+    <div className="space-y-4">
+      <div className="relative aspect-video w-full">
+        <iframe
+          src={streamUrl}
+          className="h-full w-full"
+          allowFullScreen
+          allow="autoplay; encrypted-media"
+        />
+      </div>
+
+      {/* Episode navigation controls */}
+      <div className="flex items-center justify-between">
+        <Button
+          onClick={() => onEpisodeChange?.(season, episode - 1)}
+          disabled={episode === 1}
+        >
+          ← Previous Episode
+        </Button>
+        <span className="text-sm text-gray-400">
+          S{season} E{episode}
+        </span>
+        <Button
+          onClick={() => onEpisodeChange?.(season, episode + 1)}
+        >
+          Next Episode →
+        </Button>
+      </div>
+    </div>
+  );
+}
+```
+
 ### Watch Progress Tracking
 
 ```typescript
 // hooks/useWatchHistory.ts
 export const useWatchHistory = () => {
-  const updateProgress = (movieId: number, progressSeconds: number) => {
+  const updateProgress = (
+    id: number,
+    type: 'movie' | 'tv',
+    progressSeconds: number,
+    season?: number,
+    episode?: number
+  ) => {
     const item: WatchHistoryItem = {
-      movieId,
+      id,
+      type,
       progressSeconds,
       totalSeconds: 0, // Get from player if available
       lastWatched: new Date().toISOString(),
+      ...(type === 'tv' && { season, episode }),
     };
     // Save to localStorage via Zustand store
   };
@@ -456,7 +669,7 @@ Tailwind CSS v4 uses a **CSS-first configuration** approach with the `@theme` di
 **Configuration in `app/globals.css`:**
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   /* Netflix-inspired Color Palette */
@@ -491,8 +704,8 @@ Tailwind CSS v4 uses a **CSS-first configuration** approach with the `@theme` di
   --font-size-4xl: 2.5rem; /* 40px */
 
   /* Font Families */
-  --font-display: "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
 
   /* Spacing Scale (8px grid system) */
   --spacing: 0.5rem; /* 8px base unit */
@@ -577,19 +790,92 @@ Tailwind v4 uses a **dynamic spacing scale** based on a single `--spacing` varia
 
 ### 7.4 Component Patterns
 
-**Movie Card:**
+**Media Card (Movies & TV Shows):**
 
 - Aspect ratio: 2:3 (poster)
 - Hover effect: Scale 1.05, show title overlay
 - Transition: 200ms ease-in-out
+- Badge overlay for TV show episode count or season indicator
 
 ```tsx
 <div className="group relative aspect-2/3 overflow-hidden rounded-md transition-transform duration-200 hover:scale-105">
   <Image src={posterUrl} alt={title} fill className="object-cover" />
+
+  {/* Media type badge (TV shows only) */}
+  {mediaType === 'tv' && (
+    <div className="absolute top-2 right-2 bg-black/80 px-2 py-1 rounded text-xs font-semibold">
+      TV
+    </div>
+  )}
+
   <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
     <div className="absolute bottom-0 p-4">
       <h3 className="text-text-primary font-semibold">{title}</h3>
-      <p className="text-text-secondary text-sm">{year}</p>
+      <p className="text-text-secondary text-sm">
+        {mediaType === 'movie' ? year : `${numberOfSeasons} Seasons`}
+      </p>
+    </div>
+  </div>
+</div>
+```
+
+**Season Selector (TV Shows):**
+
+- Tab-based navigation for seasons
+- Episode count indicator
+- Active state highlighting
+
+```tsx
+<div className="flex gap-2 border-b border-bg-tertiary">
+  {seasons.map((season) => (
+    <button
+      key={season.seasonNumber}
+      onClick={() => setActiveSeason(season.seasonNumber)}
+      className={cn(
+        'px-4 py-3 text-sm font-semibold transition-colors border-b-2',
+        activeSeason === season.seasonNumber
+          ? 'border-netflix-red text-text-primary'
+          : 'border-transparent text-text-secondary hover:text-text-primary'
+      )}
+    >
+      Season {season.seasonNumber}
+      <span className="ml-2 text-xs text-text-tertiary">({season.episodeCount} episodes)</span>
+    </button>
+  ))}
+</div>
+```
+
+**Episode Card (TV Shows):**
+
+- Landscape aspect ratio (16:9)
+- Episode thumbnail from TMDB
+- Episode number, title, runtime
+- Watch progress indicator
+
+```tsx
+<div className="group relative overflow-hidden rounded-md bg-bg-secondary hover:bg-bg-tertiary transition-colors cursor-pointer">
+  <div className="flex gap-4 p-4">
+    {/* Episode thumbnail */}
+    <div className="relative w-40 aspect-video shrink-0 rounded overflow-hidden">
+      <Image src={stillPath} alt={episodeTitle} fill className="object-cover" />
+
+      {/* Watch progress bar */}
+      {watchProgress > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-bg-tertiary">
+          <div className="h-full bg-netflix-red" style={{ width: `${watchProgress}%` }} />
+        </div>
+      )}
+    </div>
+
+    {/* Episode info */}
+    <div className="flex-1 min-w-0">
+      <div className="flex items-start justify-between mb-2">
+        <h4 className="font-semibold text-text-primary truncate">
+          {episodeNumber}. {episodeTitle}
+        </h4>
+        <span className="text-sm text-text-tertiary ml-2 shrink-0">{runtime}m</span>
+      </div>
+      <p className="text-sm text-text-secondary line-clamp-2">{overview}</p>
     </div>
   </div>
 </div>
@@ -621,6 +907,7 @@ Tailwind v4 uses a **dynamic spacing scale** based on a single `--spacing` varia
 - Full viewport height initially
 - Gradient overlay for text readability
 - Play/Info buttons with custom styling
+- Supports both movies and TV shows
 
 ```tsx
 <section className="relative h-screen">
@@ -631,7 +918,7 @@ Tailwind v4 uses a **dynamic spacing scale** based on a single `--spacing` varia
     <p className="text-lg text-text-secondary mb-8">{overview}</p>
     <div className="flex gap-4">
       <button className="bg-netflix-red hover:bg-netflix-red-hover px-8 py-3 rounded-md font-semibold transition-colors">
-        Play
+        {mediaType === 'movie' ? 'Play' : 'Play S1 E1'}
       </button>
       <button className="bg-bg-secondary/80 hover:bg-bg-tertiary px-8 py-3 rounded-md font-semibold transition-colors">
         More Info
@@ -696,18 +983,18 @@ Define custom animations in your CSS using the `@theme` directive:
 In Tailwind v4, Next.js configuration is done in `next.config.ts`:
 
 ```typescript
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "image.tmdb.org",
-        pathname: "/t/p/**",
+        protocol: 'https',
+        hostname: 'image.tmdb.org',
+        pathname: '/t/p/**',
       },
     ],
-    formats: ["image/avif", "image/webp"],
+    formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
@@ -721,7 +1008,7 @@ export default nextConfig;
 **Usage Pattern:**
 
 ```tsx
-import Image from "next/image";
+import Image from 'next/image';
 
 <Image
   src={`https://image.tmdb.org/t/p/w500${movie.posterPath}`}
@@ -894,10 +1181,10 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: '/(.*)',
         headers: [
           {
-            key: "Content-Security-Policy",
+            key: 'Content-Security-Policy',
             value: "frame-src 'self' https://vidsrc.me https://vidsrc.xyz;",
           },
         ],
@@ -909,9 +1196,253 @@ const nextConfig = {
 
 ---
 
-## 15. Future Enhancements (Phase 2+)
+## 15. TV Shows Implementation Details
 
-1. **TV Shows Support** - Extend to TV series with season/episode tracking
+### 15.1 Type Definitions
+
+**Core TV Show Types:**
+
+```typescript
+// types/tv.ts
+export interface TVShow {
+  id: number;
+  name: string;
+  original_name: string;
+  overview: string;
+  poster_path: string;
+  backdrop_path: string;
+  first_air_date: string;
+  last_air_date: string;
+  vote_average: number;
+  vote_count: number;
+  popularity: number;
+  origin_country: string[];
+  original_language: string;
+
+  // TV-specific fields
+  number_of_seasons: number;
+  number_of_episodes: number;
+  seasons: TVSeason[];
+  episode_run_time: number[];
+  genres: Genre[];
+  status: 'Returning Series' | 'Planned' | 'In Production' | 'Ended' | 'Canceled' | 'Pilot';
+  type: 'Documentary' | 'News' | 'Miniseries' | 'Reality' | 'Scripted' | 'Talk Show' | 'Video';
+  networks: Network[];
+  created_by: Creator[];
+}
+
+export interface TVSeason {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string;
+  season_number: number;
+  episode_count: number;
+  air_date: string;
+  episodes?: TVEpisode[];
+}
+
+export interface TVEpisode {
+  id: number;
+  name: string;
+  overview: string;
+  still_path: string;
+  episode_number: number;
+  season_number: number;
+  air_date: string;
+  runtime: number;
+  vote_average: number;
+  vote_count: number;
+  crew: CrewMember[];
+  guest_stars: CastMember[];
+}
+
+export interface Network {
+  id: number;
+  name: string;
+  logo_path: string;
+  origin_country: string;
+}
+
+export interface Creator {
+  id: number;
+  name: string;
+  profile_path: string;
+}
+```
+
+**Unified Media Types:**
+
+```typescript
+// types/media.ts
+export type MediaType = 'movie' | 'tv';
+
+export type Media = Movie | TVShow;
+
+export interface FavoriteItem {
+  id: number;
+  type: MediaType;
+  addedAt: string;
+}
+
+export interface ContinueWatchingItem {
+  id: number;
+  type: MediaType;
+  progress: number; // 0-100
+  lastWatched: string;
+
+  // Movie-specific
+  runtime?: number;
+
+  // TV-specific
+  season?: number;
+  episode?: number;
+  episodeTitle?: string;
+}
+```
+
+### 15.2 Component Specifications
+
+**SeasonSelector Component:**
+
+```typescript
+// components/features/tv/SeasonSelector.tsx
+interface SeasonSelectorProps {
+  seasons: TVSeason[];
+  activeSeason: number;
+  onSeasonChange: (seasonNumber: number) => void;
+}
+
+export function SeasonSelector({
+  seasons,
+  activeSeason,
+  onSeasonChange
+}: SeasonSelectorProps) {
+  return (
+    <ScrollArea className="w-full">
+      <div className="flex gap-2 pb-2">
+        {seasons.map((season) => (
+          <Button
+            key={season.season_number}
+            variant={activeSeason === season.season_number ? 'default' : 'outline'}
+            onClick={() => onSeasonChange(season.season_number)}
+            className="shrink-0"
+          >
+            Season {season.season_number}
+            <span className="ml-2 text-xs opacity-70">
+              ({season.episode_count})
+            </span>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+```
+
+**EpisodeGrid Component:**
+
+```typescript
+// components/features/tv/EpisodeGrid.tsx
+interface EpisodeGridProps {
+  episodes: TVEpisode[];
+  tvShowId: number;
+  seasonNumber: number;
+  watchProgress?: Map<string, number>; // key: "S1E1" -> progress %
+  onEpisodeClick: (episode: TVEpisode) => void;
+}
+
+export function EpisodeGrid({
+  episodes,
+  tvShowId,
+  seasonNumber,
+  watchProgress,
+  onEpisodeClick
+}: EpisodeGridProps) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {episodes.map((episode) => {
+        const episodeKey = `S${seasonNumber}E${episode.episode_number}`;
+        const progress = watchProgress?.get(episodeKey) || 0;
+
+        return (
+          <EpisodeCard
+            key={episode.id}
+            episode={episode}
+            progress={progress}
+            onClick={() => onEpisodeClick(episode)}
+          />
+        );
+      })}
+    </div>
+  );
+}
+```
+
+### 15.3 Routing Structure
+
+**TV Show Routes:**
+
+```
+/tv                              # Browse TV shows
+/tv/[id]                         # TV show details (overview, seasons)
+/tv/[id]/watch/[season]/[episode] # Episode player
+```
+
+**Example URLs:**
+
+```
+/tv/1399                         # Breaking Bad overview
+/tv/1399/watch/1/1              # Breaking Bad S1E1
+/tv/1399/watch/5/16             # Breaking Bad S5E16 (finale)
+```
+
+### 15.4 State Management Extensions
+
+**Continue Watching for TV Shows:**
+
+```typescript
+// stores/userPreferencesStore.ts
+interface ContinueWatchingItem {
+  id: number;
+  type: 'movie' | 'tv';
+  progress: number;
+  lastWatched: string;
+
+  // TV-specific fields
+  season?: number;
+  episode?: number;
+  episodeTitle?: string;
+  nextEpisode?: {
+    season: number;
+    episode: number;
+  };
+}
+
+// When user clicks "Continue Watching" on a TV show:
+// - If progress < 90%, resume current episode
+// - If progress >= 90%, auto-advance to next episode
+```
+
+### 15.5 Implementation Phases
+
+**Phase 1: Core TV Support (8-12 hours)**
+
+1. Add TV type definitions
+2. Create TV show detail page
+3. Implement season/episode navigation
+4. Add TV player with episode streaming
+5. Update search to include TV shows
+
+**Phase 2: Enhanced Features (6-8 hours)** 6. Episode watch progress tracking 7. Auto-play next episode 8. Continue Watching for TV shows 9. My List support for TV shows 10. Browse TV shows by category
+
+**Phase 3: Polish & Optimization (8-11 hours)** 11. Season/episode metadata caching 12. Prefetch adjacent episodes 13. Episode thumbnail optimization 14. TV show-specific UI polish 15. Mobile responsiveness for episode grids
+
+---
+
+## 16. Future Enhancements (Phase 2+)
+
+1. ~~**TV Shows Support**~~ ✅ **Now in Phase 8**
 2. **Advanced Search** - Filters by genre, year, rating, cast
 3. **Recommendations Engine** - ML-based personalized suggestions
 4. **Multi-language Support** - i18n with next-intl
@@ -922,7 +1453,7 @@ const nextConfig = {
 
 ---
 
-## 16. Development Standards
+## 17. Development Standards
 
 ### Code Quality Tools
 
@@ -960,6 +1491,8 @@ const nextConfig = {
 
 ## Conclusion
 
-This specification provides a comprehensive blueprint for building Mavida. The architecture prioritizes performance, maintainability, and user experience while remaining pragmatic for a personal project. Each decision balances modern best practices with implementation simplicity.
+This specification provides a comprehensive blueprint for building Mavida as a unified movie and TV show streaming platform. The architecture prioritizes performance, maintainability, and user experience while remaining pragmatic for a personal project. Each decision balances modern best practices with implementation simplicity.
 
-**Next Steps:** Proceed to Task Breakdown Document for phased implementation plan.
+The addition of TV Shows support (Phase 8) extends the existing architecture with minimal breaking changes, leveraging the same TMDB and VidSrc APIs while introducing season/episode navigation and episode-level watch progress tracking.
+
+**Next Steps:** Proceed to Task Breakdown Document for phased implementation plan including Phase 8 (TV Shows Support).

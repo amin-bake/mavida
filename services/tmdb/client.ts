@@ -16,6 +16,14 @@ import {
   TMDBQueryParams,
   TMDBSearchParams,
 } from '@/types/movie';
+import type {
+  TVShow,
+  TVSeason,
+  TVEpisode,
+  TVShowSearchResult,
+  TVSeasonDetail,
+  TVEpisodeDetail,
+} from '@/types/tv';
 import { TMDB_API_BASE_URL } from '@/lib/constants';
 
 /**
@@ -127,6 +135,8 @@ export class TMDBClient {
       const url = this.buildUrl(endpoint, params);
 
       try {
+        console.log('[TMDBClient] Making request to:', url);
+
         const response = await fetch(url, {
           method: 'GET',
           headers: {
@@ -150,8 +160,11 @@ export class TMDBClient {
         }
 
         const data: T = await response.json();
+        console.log('[TMDBClient] Success, received data');
         return data;
       } catch (error) {
+        console.error('[TMDBClient] Request failed:', error);
+
         if (error instanceof TMDBError) {
           throw error;
         }
@@ -325,6 +338,204 @@ export class TMDBClient {
       this.getMovieDetail(movieId),
       this.getMovieCredits(movieId),
       this.getMovieVideos(movieId),
+    ]);
+
+    return { details, credits, videos };
+  }
+
+  // ============================================
+  // TV SHOWS API METHODS
+  // ============================================
+
+  /**
+   * Get trending TV shows
+   */
+  async getTrendingTV(
+    timeWindow: 'day' | 'week' = 'week',
+    page: number = 1
+  ): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>(`/trending/tv/${timeWindow}`, {
+      page,
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get popular TV shows
+   */
+  async getPopularTV(page: number = 1): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>('/tv/popular', {
+      page,
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get top rated TV shows
+   */
+  async getTopRatedTV(page: number = 1): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>('/tv/top_rated', {
+      page,
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get TV shows airing today
+   */
+  async getAiringTodayTV(page: number = 1): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>('/tv/airing_today', {
+      page,
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get TV shows currently on the air
+   */
+  async getOnTheAirTV(page: number = 1): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>('/tv/on_the_air', {
+      page,
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get TV show details
+   */
+  async getTVShow(tvId: number): Promise<TVShow> {
+    return this.request<TVShow>(`/tv/${tvId}`, {
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get TV season details with episodes
+   */
+  async getTVSeason(tvId: number, seasonNumber: number): Promise<TVSeasonDetail> {
+    return this.request<TVSeasonDetail>(`/tv/${tvId}/season/${seasonNumber}`, {
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get TV episode details
+   */
+  async getTVEpisode(
+    tvId: number,
+    seasonNumber: number,
+    episodeNumber: number
+  ): Promise<TVEpisodeDetail> {
+    return this.request<TVEpisodeDetail>(
+      `/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}`,
+      {
+        language: this.language,
+      }
+    );
+  }
+
+  /**
+   * Get TV show credits (cast and crew)
+   */
+  async getTVCredits(tvId: number): Promise<TMDBCredits> {
+    return this.request<TMDBCredits>(`/tv/${tvId}/credits`, {
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get TV show videos (trailers, teasers, etc.)
+   */
+  async getTVVideos(tvId: number): Promise<TMDBVideosResponse> {
+    return this.request<TMDBVideosResponse>(`/tv/${tvId}/videos`, {
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get similar TV shows
+   */
+  async getSimilarTV(tvId: number, page: number = 1): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>(`/tv/${tvId}/similar`, {
+      page,
+      language: this.language,
+    });
+  }
+
+  /**
+   * Get TV show recommendations
+   */
+  async getTVRecommendations(tvId: number, page: number = 1): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>(`/tv/${tvId}/recommendations`, {
+      page,
+      language: this.language,
+    });
+  }
+
+  /**
+   * Search TV shows
+   */
+  async searchTV(
+    query: string,
+    params: Partial<TMDBSearchParams> = {}
+  ): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>('/search/tv', {
+      query,
+      page: params.page || 1,
+      include_adult: params.include_adult ?? this.includeAdult,
+      first_air_date_year: params.year,
+    });
+  }
+
+  /**
+   * Discover TV shows with filters
+   */
+  async discoverTV(params: TMDBQueryParams = {}): Promise<TVShowSearchResult> {
+    return this.request<TVShowSearchResult>('/discover/tv', {
+      ...params,
+      include_adult: params.include_adult ?? this.includeAdult,
+    });
+  }
+
+  /**
+   * Search both movies and TV shows (multi-search)
+   */
+  async searchMulti(
+    query: string,
+    params: Partial<TMDBSearchParams> = {}
+  ): Promise<{
+    page: number;
+    results: (TMDBMovie | TVShow)[];
+    total_pages: number;
+    total_results: number;
+  }> {
+    return this.request('/search/multi', {
+      query,
+      page: params.page || 1,
+      include_adult: params.include_adult ?? this.includeAdult,
+    });
+  }
+
+  /**
+   * Get multiple TV show details in parallel (with rate limiting)
+   */
+  async getMultipleTVDetails(tvIds: number[]): Promise<TVShow[]> {
+    const promises = tvIds.map((id) => this.getTVShow(id));
+    return Promise.all(promises);
+  }
+
+  /**
+   * Get full TV show information (details + credits + videos)
+   */
+  async getFullTVInfo(tvId: number): Promise<{
+    details: TVShow;
+    credits: TMDBCredits;
+    videos: TMDBVideosResponse;
+  }> {
+    const [details, credits, videos] = await Promise.all([
+      this.getTVShow(tvId),
+      this.getTVCredits(tvId),
+      this.getTVVideos(tvId),
     ]);
 
     return { details, credits, videos };

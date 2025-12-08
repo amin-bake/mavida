@@ -146,6 +146,13 @@ export interface Movie {
   popularity: number;
   isAdult: boolean;
   language: string;
+
+  // Properties for compatibility with unified media types
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  release_date?: string;
+  vote_average?: number;
+  vote_count?: number;
 }
 
 export interface MovieDetail extends Movie {

@@ -5,6 +5,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { MediaType } from '@/types/media';
 
 interface SearchState {
   // Recent searches (limited to 10)
@@ -13,11 +14,15 @@ interface SearchState {
   // Current search query
   currentQuery: string;
 
+  // Media type filter ('all' | 'movie' | 'tv')
+  mediaType: 'all' | MediaType;
+
   // Actions
   addRecentSearch: (query: string) => void;
   removeRecentSearch: (query: string) => void;
   clearRecentSearches: () => void;
   setCurrentQuery: (query: string) => void;
+  setMediaType: (type: 'all' | MediaType) => void;
 }
 
 export const useSearchStore = create<SearchState>()(
@@ -25,6 +30,7 @@ export const useSearchStore = create<SearchState>()(
     (set) => ({
       recentSearches: [],
       currentQuery: '',
+      mediaType: 'all',
 
       addRecentSearch: (query) => {
         const trimmedQuery = query.trim();
@@ -54,11 +60,16 @@ export const useSearchStore = create<SearchState>()(
       setCurrentQuery: (query) => {
         set({ currentQuery: query });
       },
+
+      setMediaType: (type) => {
+        set({ mediaType: type });
+      },
     }),
     {
       name: 'mavida-search-storage',
       partialize: (state) => ({
         recentSearches: state.recentSearches,
+        mediaType: state.mediaType,
       }),
     }
   )
