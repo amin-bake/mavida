@@ -7,7 +7,10 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Play, PlaySquare } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
 import { useWatchProgress } from '@/hooks';
+import { usePlayerPreferencesStore } from '@/stores/playerPreferencesStore';
 import type { TVShow, TVEpisode } from '@/types/tv';
 
 interface TVPlayerProps {
@@ -29,14 +32,42 @@ export function TVPlayer({
 }: TVPlayerProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [showAutoplayPrompt, setShowAutoplayPrompt] = useState(false);
-  const [autoplayCountdown, setAutoplayCountdown] = useState(5);
-  const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // VidSrc embed URL format for TV shows: https://vidsrc.xyz/embed/tv/{tmdb_id}/{season}/{episode}
-  const streamUrl = `https://vidsrc.xyz/embed/tv/${tvShow.id}/${season}/${episode}`;
+  // Player preferences from Zustand store
+  const { autoplayEnabled, autonextEnabled, setAutoplay, setAutonext } =
+    usePlayerPreferencesStore();
+
+  // Handle hydration - only render iframe after client-side mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Add debug log helper
+  const addDebugLog = useCallback((message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = `[${timestamp}] ${message}`;
+    // console.log('[TVPlayer]', message);
+    setDebugLogs((prev) => [...prev.slice(-9), logEntry]); // Keep last 10 logs
+  }, []);
+
+  // Log component mount
+  useEffect(() => {
+    addDebugLog(`Mounted - S${season}E${episode} of ${tvShow.name}`);
+  }, [season, episode, tvShow.name, addDebugLog]);
+
+  // VidSrc API embed URL format for TV shows with autoplay and autonext support
+  // autoplay=1: Video starts playing automatically (enabled by default)
+  // autonext=1: Automatically plays next episode when current episode ends
+  const streamUrl = `https://vidsrc-embed.ru/embed/tv?tmdb=${tvShow.id}&season=${season}&episode=${episode}${autoplayEnabled ? '&autoplay=1' : '&autoplay=0'}${autonextEnabled ? '&autonext=1' : '&autonext=0'}`;
+
+  useEffect(() => {
+    addDebugLog(
+      `Stream URL: ${streamUrl.substring(0, 80)}... (autoplay: ${autoplayEnabled}, autonext: ${autonextEnabled})`
+    );
+  }, [streamUrl, autoplayEnabled, autonextEnabled, addDebugLog]);
 
   // Get current season data
   const currentSeason = tvShow.seasons?.find((s) => s.season_number === season);
@@ -79,7 +110,7 @@ export function TVPlayer({
     return null;
   };
 
-  const handlePreviousEpisode = () => {
+  const handlePreviousEpisode = useCallback(() => {
     if (!hasPreviousEpisode) return;
 
     const newEpisode = episode - 1;
@@ -88,82 +119,24 @@ export function TVPlayer({
     } else {
       router.push(`/tv/${tvShow.id}/watch/${season}/${newEpisode}`);
     }
-  };
+  }, [hasPreviousEpisode, episode, season, onEpisodeChange, router, tvShow.id]);
 
-  const handleNextEpisode = () => {
+  const handleNextEpisode = useCallback(() => {
     const nextEp = getNextEpisodeInfo();
+    addDebugLog(`Next episode: nextEp=${JSON.stringify(nextEp)}`);
     if (!nextEp) return;
 
     if (onEpisodeChange) {
       onEpisodeChange(nextEp.season, nextEp.episode);
     } else {
-      router.push(`/tv/${tvShow.id}/watch/${nextEp.season}/${nextEp.episode}`);
+      const url = `/tv/${tvShow.id}/watch/${nextEp.season}/${nextEp.episode}`;
+      addDebugLog(`Navigating to: ${url}`);
+      router.push(url);
     }
-  };
+  }, [season, episode, tvShow.id, currentSeason, onEpisodeChange, router, addDebugLog]);
 
-  // Simulate progress tracking (since we can't access iframe content)
-  // In a real implementation, you'd use postMessage API if the iframe supports it
-  useEffect(() => {
-    // Start simulating progress after player loads
-    if (!isLoading && episodeDetails?.runtime) {
-      const runtimeSeconds = episodeDetails.runtime * 60;
-      let elapsedSeconds = 0;
-
-      // Save progress every 10 seconds
-      progressIntervalRef.current = setInterval(() => {
-        elapsedSeconds += 10;
-        const progress = Math.min((elapsedSeconds / runtimeSeconds) * 100, 100);
-
-        // Update progress
-        saveProgress(progress);
-
-        // If 90% complete and there's a next episode, show autoplay prompt
-        if (progress >= 90 && getNextEpisodeInfo() && !showAutoplayPrompt) {
-          setShowAutoplayPrompt(true);
-          startAutoplayCountdown();
-        }
-
-        // Stop tracking if we've reached the end
-        if (progress >= 100) {
-          if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-          }
-        }
-      }, 10000);
-
-      return () => {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
-      };
-    }
-  }, [isLoading, episodeDetails?.runtime, season, episode]);
-
-  // Autoplay countdown
-  const startAutoplayCountdown = () => {
-    setAutoplayCountdown(5);
-
-    const countdown = setInterval(() => {
-      setAutoplayCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdown);
-          handleNextEpisode();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    autoplayTimerRef.current = countdown;
-  };
-
-  const cancelAutoplay = () => {
-    if (autoplayTimerRef.current) {
-      clearInterval(autoplayTimerRef.current);
-      autoplayTimerRef.current = null;
-    }
-    setShowAutoplayPrompt(false);
-  };
+  // VidSrc handles autoplay and autonext natively with URL parameters
+  // No need for complex postMessage listeners or manual progress tracking
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -182,24 +155,17 @@ export function TVPlayer({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [season, episode, hasPreviousEpisode]);
+  }, [season, episode, hasPreviousEpisode, handleNextEpisode, handlePreviousEpisode]);
 
-  // Reset loading state and cleanup when episode changes
+  // Reset loading state when episode changes
   useEffect(() => {
     setIsLoading(true);
-    setShowAutoplayPrompt(false);
-    cancelAutoplay();
   }, [season, episode]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-      if (autoplayTimerRef.current) {
-        clearInterval(autoplayTimerRef.current);
-      }
+      // No cleanup needed - VidSrc handles everything
     };
   }, []);
 
@@ -207,7 +173,7 @@ export function TVPlayer({
     <div className={`space-y-6 ${className}`}>
       {/* Video Player */}
       <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black shadow-2xl">
-        {isLoading && (
+        {(!isMounted || isLoading) && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-10">
             <div className="flex flex-col items-center gap-4">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -216,187 +182,125 @@ export function TVPlayer({
           </div>
         )}
 
-        {/* Autoplay Next Episode Prompt */}
-        {showAutoplayPrompt && getNextEpisodeInfo() && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-20">
-            <div className="bg-card border border-border rounded-lg p-8 max-w-md mx-4 shadow-2xl">
-              <div className="text-center space-y-4">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="relative h-16 w-16">
-                    <svg className="h-16 w-16 -rotate-90">
-                      <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                        className="text-muted"
-                      />
-                      <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                        strokeDasharray={`${(autoplayCountdown / 5) * 175.93} 175.93`}
-                        className="text-primary transition-all duration-1000"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-foreground">
-                        {autoplayCountdown}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">
-                    {getNextEpisodeInfo()?.isNewSeason
-                      ? 'Next Season Starting...'
-                      : 'Next Episode Starting...'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Season {getNextEpisodeInfo()?.season} · Episode {getNextEpisodeInfo()?.episode}
-                  </p>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={cancelAutoplay}
-                    className="flex-1 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleNextEpisode}
-                    className="flex-1 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors"
-                  >
-                    Play Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        {isMounted && (
+          <iframe
+            ref={iframeRef}
+            src={streamUrl}
+            className="h-full w-full"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="origin"
+            onLoad={() => setIsLoading(false)}
+            title={`${tvShow.name} - S${season} E${episode}`}
+          />
         )}
+      </div>
 
-        <iframe
-          ref={iframeRef}
-          src={streamUrl}
-          className="h-full w-full"
-          allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          referrerPolicy="origin"
-          onLoad={() => setIsLoading(false)}
-          title={`${tvShow.name} - S${season} E${episode}`}
-        />
+      {/* VidSrc handles auto-next episode natively with autonext=1 parameter */}
+
+      {/* Playback Controls */}
+      <div className="flex items-center justify-center gap-3">
+        {/* Autoplay Toggle */}
+        <Toggle
+          pressed={autoplayEnabled}
+          onPressedChange={setAutoplay}
+          variant="outline"
+          aria-label="Toggle autoplay"
+          className="gap-2 data-[state=on]:text-[#E50914] data-[state=on]:*:[svg]:fill-[#E50914]"
+        >
+          <Play className="h-4 w-4" />
+          <span className="text-sm font-medium">Autoplay</span>
+        </Toggle>
+
+        {/* Separator */}
+        <div className="h-6 w-px bg-border" />
+
+        {/* Autonext Toggle */}
+        <Toggle
+          pressed={autonextEnabled}
+          onPressedChange={setAutonext}
+          variant="outline"
+          aria-label="Toggle auto-next episode"
+          className="gap-2 data-[state=on]:text-[#E50914] data-[state=on]:*:[svg]:stroke-[#E50914]"
+        >
+          <PlaySquare className="h-4 w-4" />
+          <span className="text-sm font-medium">Auto-Next</span>
+        </Toggle>
       </div>
 
       {/* Episode Info and Controls */}
       <div className="space-y-4">
         {/* Episode Title and Details */}
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-sm font-bold text-primary">
-              Season {season} · Episode {episode}
-            </span>
-            {currentSeason && (
-              <span className="text-sm text-muted-foreground">
-                of {currentSeason.episode_count}
+          {/* Navigation Controls */}
+          <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/10">
+            {/* Previous Episode Button */}
+            <button
+              onClick={handlePreviousEpisode}
+              disabled={!hasPreviousEpisode}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg bg-card hover:bg-card-hover disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              aria-label="Previous episode"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="font-medium hidden sm:inline">Previous Episode</span>
+              <span className="font-medium sm:hidden">Previous</span>
+            </button>
+
+            {/* Episode Counter & Mark Complete */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span className="font-medium">
+                  S{season} E{episode}
+                </span>
+              </div>
+
+              {/* VidSrc automatically handles next episode with autonext=1 parameter */}
+            </div>
+
+            {/* Next Episode Button */}
+            <button
+              onClick={handleNextEpisode}
+              disabled={!getNextEpisodeInfo()}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary text-primary-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              aria-label="Next episode"
+            >
+              <span className="font-medium hidden sm:inline">
+                {canAdvanceToNextSeason() ? 'Next Season' : 'Next Episode'}
               </span>
-            )}
-          </div>
-
-          {episodeDetails && (
-            <>
-              <h2 className="text-2xl font-bold text-foreground mb-2">{episodeDetails.name}</h2>
-              {episodeDetails.overview && (
-                <p className="text-base text-muted-foreground leading-relaxed">
-                  {episodeDetails.overview}
-                </p>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Navigation Controls */}
-        <div className="flex items-center justify-between gap-4 pt-4 border-t border-border">
-          {/* Previous Episode Button */}
-          <button
-            onClick={handlePreviousEpisode}
-            disabled={!hasPreviousEpisode}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-card hover:bg-card-hover disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label="Previous episode"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="font-medium hidden sm:inline">Previous Episode</span>
-            <span className="font-medium sm:hidden">Previous</span>
-          </button>
-
-          {/* Episode Counter */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            <span className="font-medium">
-              S{season} E{episode}
-            </span>
-          </div>
-
-          {/* Next Episode Button */}
-          <button
-            onClick={handleNextEpisode}
-            disabled={!getNextEpisodeInfo()}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary text-primary-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label="Next episode"
-          >
-            <span className="font-medium hidden sm:inline">
-              {canAdvanceToNextSeason() ? 'Next Season' : 'Next Episode'}
-            </span>
-            <span className="font-medium sm:hidden">Next</span>
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Keyboard Shortcuts Hint */}
-        <div className="flex items-center justify-center gap-4 pt-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <kbd className="px-2 py-1 rounded bg-muted font-mono">←</kbd>
-            <span>Previous</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <kbd className="px-2 py-1 rounded bg-muted font-mono">→</kbd>
-            <span>Next</span>
+              <span className="font-medium sm:hidden">Next</span>
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>

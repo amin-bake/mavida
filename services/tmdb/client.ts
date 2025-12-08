@@ -556,7 +556,24 @@ export function createTMDBClient(config: TMDBClientConfig): TMDBClient {
 
 export function getTMDBClient(): TMDBClient {
   if (!tmdbClient) {
-    throw new Error('TMDB client not initialized. Call createTMDBClient first.');
+    // Auto-initialize with environment variables if not already initialized
+    if (typeof window !== 'undefined' || process.env.NEXT_PUBLIC_TMDB_API_KEY) {
+      const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          'TMDB API key not found. Set NEXT_PUBLIC_TMDB_API_KEY environment variable.'
+        );
+      }
+
+      tmdbClient = new TMDBClient({
+        apiKey,
+        language: process.env.NEXT_PUBLIC_TMDB_LANGUAGE || 'en-US',
+        region: process.env.NEXT_PUBLIC_TMDB_REGION || 'US',
+        includeAdult: process.env.NEXT_PUBLIC_TMDB_INCLUDE_ADULT === 'true',
+      });
+    } else {
+      throw new Error('TMDB client not initialized. Call createTMDBClient first.');
+    }
   }
   return tmdbClient;
 }

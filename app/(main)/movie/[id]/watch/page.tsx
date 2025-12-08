@@ -1,18 +1,28 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Play } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
 import { useMovieDetail } from '@/hooks/useMovies';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
+import { usePlayerPreferencesStore } from '@/stores/playerPreferencesStore';
 
 export default function WatchPage() {
   const params = useParams();
   const router = useRouter();
   const movieId = parseInt(params.id as string);
+  const [isMounted, setIsMounted] = useState(false);
 
   const { data: movie, isLoading } = useMovieDetail(movieId);
   const updateWatchProgress = useUserPreferencesStore((state) => state.updateWatchProgress);
+  const { autoplayEnabled, setAutoplay } = usePlayerPreferencesStore();
+
+  // Handle hydration - only render iframe after client-side mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Track watch when page loads
   useEffect(() => {
@@ -36,8 +46,8 @@ export default function WatchPage() {
     );
   }
 
-  // VidSrc embed URL
-  const embedUrl = `https://vidsrc.xyz/embed/movie/${movieId}`;
+  // VidSrc API embed URL with autoplay from user preferences
+  const embedUrl = `https://vidsrc-embed.ru/embed/movie?tmdb=${movieId}${autoplayEnabled ? '&autoplay=1' : '&autoplay=0'}`;
 
   return (
     <div className="min-h-screen pb-16 mt-16">
@@ -77,16 +87,40 @@ export default function WatchPage() {
       </div>
 
       {/* Player */}
-      <div className="px-4 md:px-8">
+      <div className="px-4 md:px-8 space-y-4">
         <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
-          <iframe
-            src={embedUrl}
-            className="absolute inset-0 w-full h-full"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="origin"
-            title={`Watch ${movie.title}`}
-          />
+          {!isMounted && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-10">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="text-sm text-white/80">Loading player...</p>
+              </div>
+            </div>
+          )}
+          {isMounted && (
+            <iframe
+              src={embedUrl}
+              className="absolute inset-0 w-full h-full"
+              allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="origin"
+              title={`Watch ${movie.title}`}
+            />
+          )}
+        </div>
+
+        {/* Playback Controls */}
+        <div className="flex items-center justify-center gap-3">
+          <Toggle
+            pressed={autoplayEnabled}
+            onPressedChange={setAutoplay}
+            variant="outline"
+            aria-label="Toggle autoplay"
+            className="gap-2 data-[state=on]:text-[#E50914] data-[state=on]:*:[svg]:fill-[#E50914]"
+          >
+            <Play className="h-4 w-4" />
+            <span className="text-sm font-medium">Autoplay</span>
+          </Toggle>
         </div>
       </div>
 
