@@ -218,7 +218,7 @@ export default function MovieDetailPage() {
                         />
                       </div>
                     ) : (
-                      <div className="aspect-2/3 rounded-md bg-card flex items-center justify-center">
+                      <div className="relative aspect-2/3 rounded-md overflow-hidden bg-card size-32 border border-white/20 flex items-center justify-center">
                         <svg
                           className="h-12 w-12 text-muted-foreground"
                           fill="none"
