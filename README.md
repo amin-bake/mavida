@@ -6,7 +6,7 @@ A Netflix-inspired personal movie streaming application built with Next.js 16, f
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38bdf8?style=flat-square&logo=tailwind-css)
 
-![Project Image](<Screenshot 2025-12-08 185654.png>)
+![Project Image](</public/Screenshot 2025-12-08 185654.png>)
 
 ## ✨ Features
 
