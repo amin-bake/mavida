@@ -41,6 +41,7 @@ export function Navbar() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/movies', label: 'Movies' },
+    { href: '/tv', label: 'TV Shows' },
     { href: '/my-list', label: 'My List' },
   ];
 

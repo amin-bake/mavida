@@ -204,3 +204,21 @@ export async function discoverMovies(params: TMDBQueryParams = {}): Promise<Movi
     totalResults: response.total_results,
   };
 }
+
+/**
+ * Search TV shows (transformed)
+ */
+export async function searchTVShows(
+  query: string,
+  params: Partial<TMDBSearchParams> = {}
+): Promise<import('@/types/tv').TVShowsPage> {
+  const client = getClient();
+  const response = await client.searchTV(query, params);
+
+  return {
+    page: response.page,
+    tvShows: response.results,
+    totalPages: response.total_pages,
+    totalResults: response.total_results,
+  };
+}

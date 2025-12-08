@@ -2,11 +2,13 @@
 
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { SearchBar } from '@/components/features/search/SearchBar';
+import { SearchBar, MediaTypeToggle } from '@/components/features/search';
 import { SearchFilters } from '@/components/features/search/SearchFilters';
-import { MovieGrid } from '@/components/features/movie/MovieGrid';
-import { useSearchMovies } from '@/hooks/useMovies';
+import { MediaGrid } from '@/components/features/media';
+import { useMediaSearch } from '@/hooks';
 import { MovieGridSkeleton, ErrorFallback, EmptyStateFallback, Button } from '@/components/ui';
+import type { Movie } from '@/types/movie';
+import type { TVShow } from '@/types/tv';
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -20,8 +22,8 @@ function SearchContent() {
     minRating: 0,
   });
 
-  // Fetch search results
-  const { data, isLoading, isError, error, refetch } = useSearchMovies(query, {
+  // Fetch unified search results (movies and TV shows)
+  const { data, isLoading, isError, error, refetch } = useMediaSearch(query, {
     page,
     year: filters.year ? parseInt(filters.year) : undefined,
   });
@@ -53,6 +55,9 @@ function SearchContent() {
   const hasMorePages = data && page < data.totalPages;
   const hasPreviousPage = page > 1;
 
+  // Combine movies and TV shows for display
+  const allItems: (Movie | TVShow)[] = data ? [...data.movies, ...data.tvShows] : [];
+
   return (
     <div className="container mx-auto px-4 py-8 pt-24">
       {/* Search Bar */}
@@ -65,6 +70,13 @@ function SearchContent() {
           autoFocus={!initialQuery}
         />
       </div>
+
+      {/* Media Type Toggle */}
+      {query && (
+        <div className="mb-6">
+          <MediaTypeToggle />
+        </div>
+      )}
 
       {/* Filters */}
       {query && (
@@ -106,12 +118,17 @@ function SearchContent() {
             showHomeButton={false}
             className="py-16"
           />
-        ) : data && data.movies.length > 0 ? (
+        ) : data && allItems.length > 0 ? (
           <div>
             <div className="mb-4 text-muted-foreground">
               Found {data.totalResults.toLocaleString()} results for &ldquo;{query}&rdquo;
+              {data.movies.length > 0 && data.tvShows.length > 0 && (
+                <span className="ml-2">
+                  ({data.movies.length} movies, {data.tvShows.length} TV shows)
+                </span>
+              )}
             </div>
-            <MovieGrid movies={data.movies} />
+            <MediaGrid items={allItems} />
 
             {/* Pagination Controls */}
             <div className="mt-12 space-y-6">
@@ -159,7 +176,7 @@ function SearchContent() {
                   Page <span className="font-semibold text-foreground">{page}</span> of{' '}
                   <span className="font-semibold text-foreground">{data.totalPages}</span>
                   {' • '}
-                  Showing {data.movies.length} of {data.totalResults.toLocaleString()} results
+                  Showing {allItems.length} of {data.totalResults.toLocaleString()} results
                 </div>
 
                 {/* Next Button */}
@@ -190,7 +207,7 @@ function SearchContent() {
         ) : (
           <EmptyStateFallback
             title="No results found"
-            message={`No movies found for "${query}". Try searching for something else or adjust your filters.`}
+            message={`No results found for "${query}". Try searching for something else or adjust your filters.`}
           />
         )}
       </div>

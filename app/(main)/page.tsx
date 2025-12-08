@@ -5,9 +5,13 @@ import {
   usePopularMovies,
   useTopRatedMovies,
   useNowPlayingMovies,
-  useContinueWatching,
+  useTrendingTV,
+  usePopularTV,
+  useEnhancedContinueWatching,
 } from '@/hooks';
-import { MovieHero, MovieRow } from '@/components/features/movie';
+import { MovieRow } from '@/components/features/movie';
+import { TVShowRow } from '@/components/features/tv';
+import { EnhancedMediaRow, MediaHero } from '@/components/features/media';
 import { MovieRowSkeleton, LazyLoad, InlineErrorFallback } from '@/components/ui';
 
 /**
@@ -41,30 +45,46 @@ export default function HomePage() {
     refetch: refetchNowPlaying,
   } = useNowPlayingMovies(1);
 
+  // Fetch TV show data
+  const {
+    data: trendingTVData,
+    isLoading: trendingTVLoading,
+    error: trendingTVError,
+    refetch: refetchTrendingTV,
+  } = useTrendingTV('week', 1);
+  const {
+    data: popularTVData,
+    isLoading: popularTVLoading,
+    error: popularTVError,
+    refetch: refetchPopularTV,
+  } = usePopularTV(1);
+
   // Get Continue Watching items
   const { items: continueWatchingItems, isLoading: continueWatchingLoading } =
-    useContinueWatching();
+    useEnhancedContinueWatching();
 
-  // Create progress map for Continue Watching
-  const continueWatchingProgressMap = Object.fromEntries(
-    continueWatchingItems.map((item) => [item.movie.id, item.progress])
-  );
+  // Transform for EnhancedMediaRow
+  const continueWatchingMediaItems = continueWatchingItems.map((item) => ({
+    media: item.media,
+    progress: item.progress,
+    season: item.season,
+    episode: item.episode,
+  }));
 
   return (
     <div className="min-h-screen">
       {/* Hero Section - extends under navbar */}
-      <MovieHero />
+      <MediaHero />
 
       {/* Movie Rows - with top padding */}
       <div className="relative z-10 flex flex-col gap-16 pb-20 pt-6">
         {/* Continue Watching Row */}
         {continueWatchingLoading ? (
           <MovieRowSkeleton />
-        ) : continueWatchingItems.length > 0 ? (
-          <MovieRow
+        ) : continueWatchingMediaItems.length > 0 ? (
+          <EnhancedMediaRow
             title="Continue Watching"
-            movies={continueWatchingItems.map((item) => item.movie)}
-            progressMap={continueWatchingProgressMap}
+            items={continueWatchingMediaItems}
             priority={true}
           />
         ) : null}
@@ -138,6 +158,46 @@ export default function HomePage() {
             </div>
           ) : topRatedData?.movies && topRatedData.movies.length > 0 ? (
             <MovieRow title="Top Rated Movies" movies={topRatedData.movies} priority={false} />
+          ) : null}
+        </LazyLoad>
+
+        {/* Trending TV Shows Row - Lazy Loaded */}
+        <LazyLoad placeholder={<MovieRowSkeleton />}>
+          {trendingTVLoading ? (
+            <MovieRowSkeleton />
+          ) : trendingTVError ? (
+            <div className="px-4 md:px-8">
+              <h2 className="text-2xl font-bold mb-4">Trending TV Shows</h2>
+              <InlineErrorFallback
+                error={trendingTVError}
+                onRetry={() => refetchTrendingTV()}
+                message="Failed to load trending TV shows"
+              />
+            </div>
+          ) : trendingTVData?.tvShows && trendingTVData.tvShows.length > 0 ? (
+            <TVShowRow
+              title="Trending TV Shows"
+              tvShows={trendingTVData.tvShows}
+              priority={false}
+            />
+          ) : null}
+        </LazyLoad>
+
+        {/* Popular TV Shows Row - Lazy Loaded */}
+        <LazyLoad placeholder={<MovieRowSkeleton />}>
+          {popularTVLoading ? (
+            <MovieRowSkeleton />
+          ) : popularTVError ? (
+            <div className="px-4 md:px-8">
+              <h2 className="text-2xl font-bold mb-4">Popular TV Shows</h2>
+              <InlineErrorFallback
+                error={popularTVError}
+                onRetry={() => refetchPopularTV()}
+                message="Failed to load popular TV shows"
+              />
+            </div>
+          ) : popularTVData?.tvShows && popularTVData.tvShows.length > 0 ? (
+            <TVShowRow title="Popular TV Shows" tvShows={popularTVData.tvShows} priority={false} />
           ) : null}
         </LazyLoad>
       </div>

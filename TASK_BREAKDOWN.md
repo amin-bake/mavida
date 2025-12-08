@@ -1,7 +1,7 @@
 # Mavida - Task Breakdown & Implementation Roadmap
 
 **Phased Development Plan**  
-_Last Updated: December 7, 2025_
+_Last Updated: December 8, 2025_
 
 ---
 
@@ -592,11 +592,40 @@ This document provides a granular breakdown of all development tasks organized i
 
 ## Optional Future Enhancements
 
-### Phase 8: Advanced Features (Post-MVP)
+### Phase 8: TV Shows Support (Post-MVP - Now Active)
+
+**Status:** 🟡 In Progress (Branch: `tv-shows`)  
+**Estimated Time:** 22-31 hours (3-4 days)  
+**Feasibility:** ✅ Confirmed (TMDB + VidSrc APIs support TV shows)
+
+> **Note:** For detailed implementation plan, see `PHASE_8_TV_SHOWS.md`
+
+| Task ID | Task Description                                       | Complexity | Status |
+| ------- | ------------------------------------------------------ | ---------- | ------ |
+| 8.1     | Type Definitions & Core Types                          | Low        | 🟢     |
+| 8.2     | TMDB API Integration for TV                            | Medium     | 🟢     |
+| 8.3     | TV Show Components (SeasonSelector, EpisodeCard, etc.) | High       | 🟢     |
+| 8.4     | TV Show Pages & Routes                                 | High       | 🟢     |
+| 8.5     | State Management Updates (mediaStore, searchStore)     | Medium     | 🟢     |
+| 8.6     | Search & Discovery Updates                             | Medium     | 🟢     |
+| 8.7     | Navigation & UI Updates                                | Low        | 🟢     |
+| 8.8     | Watch Progress & Auto-play Next Episode                | Medium     | 🔴     |
+| 8.9     | Testing & Polish                                       | Medium     | 🔴     |
+
+**Deliverables:**
+
+- TV show browsing, detail pages, and episode player
+- Season/episode navigation
+- Episode-level watch progress tracking
+- TV shows in search, My List, and Continue Watching
+- Auto-play next episode functionality
+
+---
+
+### Phase 9: Advanced Features (Future)
 
 | Feature                                    | Complexity | Priority | Estimated Time |
 | ------------------------------------------ | ---------- | -------- | -------------- |
-| TV Shows Support                           | High       | Medium   | 3-4 days       |
 | Advanced Search Filters                    | Medium     | High     | 2 days         |
 | User Authentication (NextAuth.js)          | High       | Low      | 2-3 days       |
 | Recommendations Engine (ML-based)          | Very High  | Low      | 5-7 days       |
@@ -656,31 +685,34 @@ Phase 1 (API) → Phase 4 (Detail/Watch) → Phase 5 (User Prefs)
                                          Phase 6 (Optimization)
                                                ↓
                                          Phase 7 (Deployment)
+                                               ↓
+                                    Phase 8 (TV Shows Support) - NOW ACTIVE
+                                               ↓
+                                    Phase 9 (Advanced Features)
 ```
 
 ---
 
 ## Progress Tracking
 
-**Total Tasks:** 120+  
+**Total Tasks:** 120+ (Base) + 9 (Phase 8)  
 **Completed:** 106 (Phases 1-5 Complete, Phase 6 Complete - All tasks, Phase 7.2 Complete - 6 of 6 tasks)  
-**In Progress:** 0  
-**Not Started:** 7 (Phase 7.1 - 7 tasks)
+**In Progress:** Phase 8 - TV Shows Support (9 tasks) 🟡  
+**Not Started:** 7 (Phase 7.1 - 7 tasks) + Phase 9
 
-**Estimated Total Time:** 12-15 days (full-time)  
-**Current Phase:** Phase 6.2 - Accessibility & UX Improvements (COMPLETED ✅)
+**Estimated Total Time:** 12-15 days (movies only) + 3-4 days (TV shows)  
+**Current Phase:** Phase 8 - TV Shows Support (ACTIVE 🟡)  
+**Branch:** `tv-shows`
 
 ---
 
 ## Next Session Agenda
 
-For the next implementation session, we'll tackle:
+For the next implementation session, we'll tackle **Phase 8.1** (Type Definitions):
 
-1. **Task 5.2.2** - Create "My List" page (app/(main)/my-list/page.tsx)
-2. **Task 5.2.3** - Display favorited movies in grid layout
-3. **Task 5.2.6** - Display "Continue Watching" on homepage
-4. **Task 5.1.1** - Create movieStore.ts for playback state (optional)
-5. **Task 5.1.5** - Add Zustand devtools integration (optional)
+1. **Task 8.1.1** - Create TV show type definitions (types/tv.ts)
+2. **Task 8.1.2** - Create unified media types (types/media.ts)
+3. **Task 8.1.2** - Extend existing type definitions for TV support
 
 **Estimated Time for Next Session:** 2-3 hours
 
