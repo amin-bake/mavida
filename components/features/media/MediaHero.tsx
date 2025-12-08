@@ -120,7 +120,7 @@ export function MediaHero({
 
   // Loading state
   if (isLoading) {
-    console.log('[MediaHero] Loading...');
+    // console.log('[MediaHero] Loading...');
     return <MovieHeroSkeleton />;
   }
 
@@ -171,12 +171,12 @@ export function MediaHero({
     ? `/movie/${currentMedia.id}/watch`
     : `/tv/${currentMedia.id}`;
 
-  console.log(
-    '[MediaHero] Rendering:',
-    title,
-    'Type:',
-    isMovie(currentMedia) ? 'Movie' : 'TV Show'
-  );
+//   console.log(
+//     '[MediaHero] Rendering:',
+//     title,
+//     'Type:',
+//     isMovie(currentMedia) ? 'Movie' : 'TV Show'
+//   );
 
   return (
     <section
