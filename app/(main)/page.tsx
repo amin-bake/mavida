@@ -1,204 +1,114 @@
-'use client';
-
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import {
-  useTrendingMovies,
-  usePopularMovies,
-  useTopRatedMovies,
-  useNowPlayingMovies,
-  useTrendingTV,
-  usePopularTV,
-  useEnhancedContinueWatching,
-} from '@/hooks';
+  getTrendingMovies,
+  getPopularMovies,
+  getTopRatedMovies,
+  getNowPlayingMovies,
+  getTrendingTV,
+  getPopularTV,
+} from '@/services/tmdb';
 import { MovieRow } from '@/components/features/movie';
 import { TVShowRow } from '@/components/features/tv';
-import { EnhancedMediaRow, MediaHero } from '@/components/features/media';
-import { MovieRowSkeleton, LazyLoad, InlineErrorFallback } from '@/components/ui';
+import { MovieRowSkeleton, LazyLoad } from '@/components/ui';
+
+// Dynamic imports for heavy components (Rule 2.4)
+const MediaHero = dynamic(
+  () => import('@/components/features/media/MediaHero').then((m) => ({ default: m.MediaHero })),
+  {
+    loading: () => <div className="h-[56vh] bg-black animate-pulse" />,
+  }
+);
+
+// Continue Watching Row - Client-side component
+const ContinueWatchingRow = dynamic(() => import('./ContinueWatchingRow'), {
+  loading: () => <MovieRowSkeleton />,
+});
 
 /**
  * Homepage
  * Main landing page with hero and movie rows
  */
-export default function HomePage() {
-  // Fetch movie data with refetch capability
-  const {
-    data: trendingData,
-    isLoading: trendingLoading,
-    error: trendingError,
-    refetch: refetchTrending,
-  } = useTrendingMovies('week', 1);
-  const {
-    data: popularData,
-    isLoading: popularLoading,
-    error: popularError,
-    refetch: refetchPopular,
-  } = usePopularMovies(1);
-  const {
-    data: topRatedData,
-    isLoading: topRatedLoading,
-    error: topRatedError,
-    refetch: refetchTopRated,
-  } = useTopRatedMovies(1);
-  const {
-    data: nowPlayingData,
-    isLoading: nowPlayingLoading,
-    error: nowPlayingError,
-    refetch: refetchNowPlaying,
-  } = useNowPlayingMovies(1);
-
-  // Fetch TV show data
-  const {
-    data: trendingTVData,
-    isLoading: trendingTVLoading,
-    error: trendingTVError,
-    refetch: refetchTrendingTV,
-  } = useTrendingTV('week', 1);
-  const {
-    data: popularTVData,
-    isLoading: popularTVLoading,
-    error: popularTVError,
-    refetch: refetchPopularTV,
-  } = usePopularTV(1);
-
-  // Get Continue Watching items
-  const { items: continueWatchingItems, isLoading: continueWatchingLoading } =
-    useEnhancedContinueWatching();
-
-  // Transform for EnhancedMediaRow
-  const continueWatchingMediaItems = continueWatchingItems.map((item) => ({
-    media: item.media,
-    progress: item.progress,
-    season: item.season,
-    episode: item.episode,
-  }));
+export default async function HomePage() {
+  // Fetch all data in parallel (Rule 1.4: Promise.all for independent operations)
+  const [trendingData, popularData, topRatedData, nowPlayingData, trendingTVData, popularTVData] =
+    await Promise.all([
+      getTrendingMovies('week', 1),
+      getPopularMovies(1),
+      getTopRatedMovies(1),
+      getNowPlayingMovies(1),
+      getTrendingTV('week', 1),
+      getPopularTV(1),
+    ]);
 
   return (
     <div className="min-h-screen">
       {/* Hero Section - extends under navbar */}
-      <MediaHero />
+      <Suspense fallback={<div className="h-[56vh] bg-black animate-pulse" />}>
+        <MediaHero initialData={{ trending: trendingData, trendingTV: trendingTVData }} />
+      </Suspense>
 
-      {/* Movie Rows - with top padding */}
-      <div className="relative z-10 flex flex-col gap-16 pb-20 pt-6">
-        {/* Continue Watching Row */}
-        {continueWatchingLoading ? (
-          <MovieRowSkeleton />
-        ) : continueWatchingMediaItems.length > 0 ? (
-          <EnhancedMediaRow
-            title="Continue Watching"
-            items={continueWatchingMediaItems}
-            priority={true}
-          />
-        ) : null}
+      {/* Movie Rows - with top padding and proper spacing */}
+      <div className="relative z-10 space-y-16 pb-20 pt-6 px-0">
+        {/* Continue Watching Row - Client-side only */}
+        <ContinueWatchingRow />
 
         {/* Trending Now Row */}
-        {trendingLoading ? (
-          <MovieRowSkeleton />
-        ) : trendingError ? (
-          <div className="px-4 md:px-8">
-            <h2 className="text-2xl font-bold mb-4">Trending Now</h2>
-            <InlineErrorFallback
-              error={trendingError}
-              onRetry={() => refetchTrending()}
-              message="Failed to load trending movies"
-            />
-          </div>
-        ) : trendingData?.movies && trendingData.movies.length > 0 ? (
+        {trendingData.movies && trendingData.movies.length > 0 && (
           <MovieRow title="Trending Now" movies={trendingData.movies} priority={false} />
-        ) : null}
+        )}
 
         {/* Now Playing Row */}
-        {nowPlayingLoading ? (
-          <MovieRowSkeleton />
-        ) : nowPlayingError ? (
-          <div className="px-4 md:px-8">
-            <h2 className="text-2xl font-bold mb-4">Now Playing in Theaters</h2>
-            <InlineErrorFallback
-              error={nowPlayingError}
-              onRetry={() => refetchNowPlaying()}
-              message="Failed to load now playing movies"
-            />
-          </div>
-        ) : nowPlayingData?.movies && nowPlayingData.movies.length > 0 ? (
+        {nowPlayingData.movies && nowPlayingData.movies.length > 0 && (
           <MovieRow
             title="Now Playing in Theaters"
             movies={nowPlayingData.movies}
             priority={false}
           />
-        ) : null}
+        )}
 
         {/* Popular Movies Row - Lazy Loaded */}
         <LazyLoad placeholder={<MovieRowSkeleton />}>
-          {popularLoading ? (
-            <MovieRowSkeleton />
-          ) : popularError ? (
-            <div className="px-4 md:px-8">
-              <h2 className="text-2xl font-bold mb-4">Popular Movies</h2>
-              <InlineErrorFallback
-                error={popularError}
-                onRetry={() => refetchPopular()}
-                message="Failed to load popular movies"
-              />
-            </div>
-          ) : popularData?.movies && popularData.movies.length > 0 ? (
-            <MovieRow title="Popular Movies" movies={popularData.movies} priority={false} />
-          ) : null}
+          <Suspense fallback={<MovieRowSkeleton />}>
+            {popularData.movies && popularData.movies.length > 0 && (
+              <MovieRow title="Popular Movies" movies={popularData.movies} priority={false} />
+            )}
+          </Suspense>
         </LazyLoad>
 
         {/* Top Rated Row - Lazy Loaded */}
         <LazyLoad placeholder={<MovieRowSkeleton />}>
-          {topRatedLoading ? (
-            <MovieRowSkeleton />
-          ) : topRatedError ? (
-            <div className="px-4 md:px-8">
-              <h2 className="text-2xl font-bold mb-4">Top Rated Movies</h2>
-              <InlineErrorFallback
-                error={topRatedError}
-                onRetry={() => refetchTopRated()}
-                message="Failed to load top rated movies"
-              />
-            </div>
-          ) : topRatedData?.movies && topRatedData.movies.length > 0 ? (
-            <MovieRow title="Top Rated Movies" movies={topRatedData.movies} priority={false} />
-          ) : null}
+          <Suspense fallback={<MovieRowSkeleton />}>
+            {topRatedData.movies && topRatedData.movies.length > 0 && (
+              <MovieRow title="Top Rated Movies" movies={topRatedData.movies} priority={false} />
+            )}
+          </Suspense>
         </LazyLoad>
 
         {/* Trending TV Shows Row - Lazy Loaded */}
         <LazyLoad placeholder={<MovieRowSkeleton />}>
-          {trendingTVLoading ? (
-            <MovieRowSkeleton />
-          ) : trendingTVError ? (
-            <div className="px-4 md:px-8">
-              <h2 className="text-2xl font-bold mb-4">Trending TV Shows</h2>
-              <InlineErrorFallback
-                error={trendingTVError}
-                onRetry={() => refetchTrendingTV()}
-                message="Failed to load trending TV shows"
+          <Suspense fallback={<MovieRowSkeleton />}>
+            {trendingTVData.tvShows && trendingTVData.tvShows.length > 0 && (
+              <TVShowRow
+                title="Trending TV Shows"
+                tvShows={trendingTVData.tvShows}
+                priority={false}
               />
-            </div>
-          ) : trendingTVData?.tvShows && trendingTVData.tvShows.length > 0 ? (
-            <TVShowRow
-              title="Trending TV Shows"
-              tvShows={trendingTVData.tvShows}
-              priority={false}
-            />
-          ) : null}
+            )}
+          </Suspense>
         </LazyLoad>
 
         {/* Popular TV Shows Row - Lazy Loaded */}
         <LazyLoad placeholder={<MovieRowSkeleton />}>
-          {popularTVLoading ? (
-            <MovieRowSkeleton />
-          ) : popularTVError ? (
-            <div className="px-4 md:px-8">
-              <h2 className="text-2xl font-bold mb-4">Popular TV Shows</h2>
-              <InlineErrorFallback
-                error={popularTVError}
-                onRetry={() => refetchPopularTV()}
-                message="Failed to load popular TV shows"
+          <Suspense fallback={<MovieRowSkeleton />}>
+            {popularTVData.tvShows && popularTVData.tvShows.length > 0 && (
+              <TVShowRow
+                title="Popular TV Shows"
+                tvShows={popularTVData.tvShows}
+                priority={false}
               />
-            </div>
-          ) : popularTVData?.tvShows && popularTVData.tvShows.length > 0 ? (
-            <TVShowRow title="Popular TV Shows" tvShows={popularTVData.tvShows} priority={false} />
-          ) : null}
+            )}
+          </Suspense>
         </LazyLoad>
       </div>
     </div>

@@ -6,7 +6,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { X, CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import X from 'lucide-react/dist/esm/icons/x';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2';
+import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle';
+import Info from 'lucide-react/dist/esm/icons/info';
+import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle';
 import { cn } from '@/lib/utils';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';

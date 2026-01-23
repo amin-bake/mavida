@@ -71,7 +71,7 @@ function EmptyState({ message = 'No episodes available' }: { message?: string })
       </div>
       <h3 className="text-lg font-semibold text-foreground mb-2">{message}</h3>
       <p className="text-sm text-muted-foreground max-w-sm">
-        This season doesn't have any episodes yet, or the data is unavailable.
+        This season doesn&apos;t have any episodes yet, or the data is unavailable.
       </p>
     </div>
   );

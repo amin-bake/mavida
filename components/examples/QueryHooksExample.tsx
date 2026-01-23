@@ -67,7 +67,7 @@ export function ExampleSearchResults({ query }: { query: string }) {
 
   return (
     <div>
-      <h2>Search Results for "{query}"</h2>
+      <h2>Search Results for &quo;{query}&rdquo;</h2>
       <p>Found {data?.totalResults} results</p>
       <ul>
         {data?.movies.map((movie) => (

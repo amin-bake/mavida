@@ -5,7 +5,11 @@
 
 'use client';
 
-import { AlertCircle, RefreshCw, Home, WifiOff, ServerCrash } from 'lucide-react';
+import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
+import Home from 'lucide-react/dist/esm/icons/home';
+import WifiOff from 'lucide-react/dist/esm/icons/wifi-off';
+import ServerCrash from 'lucide-react/dist/esm/icons/server-crash';
 import { Button } from './Button';
 
 export type ErrorType = 'network' | 'server' | 'not-found' | 'generic';
@@ -198,7 +202,7 @@ export function EmptyStateFallback({
       <h3 className="text-xl font-semibold text-foreground mb-2">{title}</h3>
       <p className="text-muted-foreground mb-6 max-w-md">{message}</p>
       {action && actionLabel && (
-        <Button onClick={action} variant="outline" className='cursor-pointer hover:bg-accent-hover'>
+        <Button onClick={action} variant="outline" className="cursor-pointer hover:bg-accent-hover">
           {actionLabel}
         </Button>
       )}

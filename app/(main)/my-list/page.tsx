@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart } from 'lucide-react';
+import Heart from 'lucide-react/dist/esm/icons/heart';
 import { useRouter } from 'next/navigation';
 import { useUserPreferencesStore } from '@/stores';
 import { useQueries } from '@tanstack/react-query';
@@ -68,7 +68,7 @@ export default function MyListPage() {
         {/* Page Header */}
         <div className="flex flex-col gap-y-2 mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">My List</h1>
-          <p className="text-lg text-muted-foreground" >
+          <p className="text-lg text-muted-foreground">
             {totalItems === 0
               ? ''
               : `${totalItems} ${totalItems === 1 ? 'item' : 'items'} in your list`}
@@ -99,20 +99,16 @@ export default function MyListPage() {
             {/* Movies Section */}
             {allMovies.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold text-foreground">
-                  Movies ({allMovies.length})
-                </h2>
-                <MovieGrid movies={allMovies} className='mt-4' />
+                <h2 className="text-2xl font-bold text-foreground">Movies ({allMovies.length})</h2>
+                <MovieGrid movies={allMovies} className="mt-4" />
               </div>
             )}
 
             {/* TV Shows Section */}
             {tvShows.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold text-foreground">
-                  TV Shows ({tvShows.length})
-                </h2>
-                <TVGrid tvShows={tvShows} className='mt-4' />
+                <h2 className="text-2xl font-bold text-foreground">TV Shows ({tvShows.length})</h2>
+                <TVGrid tvShows={tvShows} className="mt-4" />
               </div>
             )}
           </div>

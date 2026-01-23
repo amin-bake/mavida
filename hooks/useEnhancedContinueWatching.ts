@@ -38,6 +38,8 @@ interface EnhancedContinueWatchingItem {
   };
 }
 
+export type { EnhancedContinueWatchingItem };
+
 /**
  * Hook to fetch media from continue watching list
  * - Supports both movies and TV shows

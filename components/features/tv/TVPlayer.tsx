@@ -7,7 +7,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Play, PlaySquare } from 'lucide-react';
+import Play from 'lucide-react/dist/esm/icons/play';
+import PlaySquare from 'lucide-react/dist/esm/icons/play-square';
 import { Toggle } from '@/components/ui/toggle';
 import { useWatchProgress } from '@/hooks';
 import { usePlayerPreferencesStore } from '@/stores/playerPreferencesStore';
@@ -32,49 +33,23 @@ export function TVPlayer({
 }: TVPlayerProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Player preferences from Zustand store
   const { autoplayEnabled, autonextEnabled, setAutoplay, setAutonext } =
     usePlayerPreferencesStore();
 
-  // Handle hydration - only render iframe after client-side mount
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Add debug log helper
-  const addDebugLog = useCallback((message: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = `[${timestamp}] ${message}`;
-    // console.log('[TVPlayer]', message);
-    setDebugLogs((prev) => [...prev.slice(-9), logEntry]); // Keep last 10 logs
-  }, []);
-
-  // Log component mount
-  useEffect(() => {
-    addDebugLog(`Mounted - S${season}E${episode} of ${tvShow.name}`);
-  }, [season, episode, tvShow.name, addDebugLog]);
-
   // VidSrc API embed URL format for TV shows with autoplay and autonext support
   // autoplay=1: Video starts playing automatically (enabled by default)
   // autonext=1: Automatically plays next episode when current episode ends
   const streamUrl = `https://vidsrc-embed.ru/embed/tv?tmdb=${tvShow.id}&season=${season}&episode=${episode}${autoplayEnabled ? '&autoplay=1' : '&autoplay=0'}${autonextEnabled ? '&autonext=1' : '&autonext=0'}`;
-
-  useEffect(() => {
-    addDebugLog(
-      `Stream URL: ${streamUrl.substring(0, 80)}... (autoplay: ${autoplayEnabled}, autonext: ${autonextEnabled})`
-    );
-  }, [streamUrl, autoplayEnabled, autonextEnabled, addDebugLog]);
 
   // Get current season data
   const currentSeason = tvShow.seasons?.find((s) => s.season_number === season);
   const currentSeasonEpisodeCount = currentSeason?.episode_count || 0;
 
   // Watch progress tracking
-  const { updateProgress, saveProgress } = useWatchProgress({
+  const { updateProgress: _updateProgress, saveProgress: _saveProgress } = useWatchProgress({
     id: tvShow.id,
     type: 'tv',
     season,
@@ -92,12 +67,12 @@ export function TVPlayer({
   const hasNextEpisode = currentSeason ? episode < currentSeason.episode_count : false;
 
   // Check if we can auto-advance to next season
-  const canAdvanceToNextSeason = () => {
+  const canAdvanceToNextSeason = useCallback(() => {
     if (!currentSeason || episode !== currentSeason.episode_count) return false;
     return season < tvShow.number_of_seasons;
-  };
+  }, [currentSeason, episode, season, tvShow.number_of_seasons]);
 
-  const getNextEpisodeInfo = (): {
+  const getNextEpisodeInfo = useCallback((): {
     season: number;
     episode: number;
     isNewSeason: boolean;
@@ -108,7 +83,7 @@ export function TVPlayer({
       return { season: season + 1, episode: 1, isNewSeason: true };
     }
     return null;
-  };
+  }, [hasNextEpisode, season, episode, canAdvanceToNextSeason]);
 
   const handlePreviousEpisode = useCallback(() => {
     if (!hasPreviousEpisode) return;
@@ -123,17 +98,14 @@ export function TVPlayer({
 
   const handleNextEpisode = useCallback(() => {
     const nextEp = getNextEpisodeInfo();
-    addDebugLog(`Next episode: nextEp=${JSON.stringify(nextEp)}`);
     if (!nextEp) return;
 
     if (onEpisodeChange) {
       onEpisodeChange(nextEp.season, nextEp.episode);
     } else {
-      const url = `/tv/${tvShow.id}/watch/${nextEp.season}/${nextEp.episode}`;
-      addDebugLog(`Navigating to: ${url}`);
-      router.push(url);
+      router.push(`/tv/${tvShow.id}/watch/${nextEp.season}/${nextEp.episode}`);
     }
-  }, [season, episode, tvShow.id, currentSeason, onEpisodeChange, router, addDebugLog]);
+  }, [getNextEpisodeInfo, onEpisodeChange, router, tvShow.id]);
 
   // VidSrc handles autoplay and autonext natively with URL parameters
   // No need for complex postMessage listeners or manual progress tracking
@@ -155,25 +127,13 @@ export function TVPlayer({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [season, episode, hasPreviousEpisode, handleNextEpisode, handlePreviousEpisode]);
-
-  // Reset loading state when episode changes
-  useEffect(() => {
-    setIsLoading(true);
-  }, [season, episode]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // No cleanup needed - VidSrc handles everything
-    };
-  }, []);
+  }, [getNextEpisodeInfo, hasPreviousEpisode, handleNextEpisode, handlePreviousEpisode]);
 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Video Player */}
       <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black shadow-2xl">
-        {(!isMounted || isLoading) && (
+        {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-10">
             <div className="flex flex-col items-center gap-4">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -182,18 +142,17 @@ export function TVPlayer({
           </div>
         )}
 
-        {isMounted && (
-          <iframe
-            ref={iframeRef}
-            src={streamUrl}
-            className="h-full w-full"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="origin"
-            onLoad={() => setIsLoading(false)}
-            title={`${tvShow.name} - S${season} E${episode}`}
-          />
-        )}
+        <iframe
+          key={`${tvShow.id}-${season}-${episode}`}
+          ref={iframeRef}
+          src={streamUrl}
+          className="h-full w-full"
+          allowFullScreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="origin"
+          onLoad={() => setIsLoading(false)}
+          title={`${tvShow.name} - S${season} E${episode}`}
+        />
       </div>
 
       {/* VidSrc handles auto-next episode natively with autonext=1 parameter */}

@@ -5,7 +5,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import { StoreHydration } from '@/components/providers';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ToastProvider } from '@/contexts/ToastContext';
-import { Analytics } from '@vercel/analytics/next';
+import { AnalyticsWrapper } from '@/components/providers/AnalyticsWrapper';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -35,12 +35,11 @@ export default function RootLayout({
             <StoreHydration>
               <ToastProvider>
                 {children}
-                <Analytics />
+                <AnalyticsWrapper />
               </ToastProvider>
             </StoreHydration>
           </QueryProvider>
         </ErrorBoundary>
-        
       </body>
     </html>
   );

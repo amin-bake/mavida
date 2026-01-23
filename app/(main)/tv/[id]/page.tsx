@@ -7,7 +7,6 @@
 
 import { useState, use } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
 import { getBackdropUrl, getPosterUrl } from '@/lib/tmdb/images';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
