@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { MediaCard } from '../media/MediaCard';
 import type { Movie } from '@/types/movie';
 

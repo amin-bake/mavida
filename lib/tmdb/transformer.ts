@@ -30,9 +30,12 @@ function extractYear(dateString: string): number | null {
  * Transform TMDB movie to application Movie type
  */
 export function transformMovie(tmdbMovie: TMDBMovie, genres: TMDBGenre[] = []): Movie {
-  // Map genre IDs to names
+  // Build genre map for O(1) lookups (Rule 7.11: Use Set/Map for O(1) lookups)
+  const genreMap = new Map(genres.map((g) => [g.id, g.name]));
+
+  // Map genre IDs to names using the map
   const genreNames = tmdbMovie.genre_ids
-    .map((id) => genres.find((g) => g.id === id)?.name)
+    .map((id) => genreMap.get(id))
     .filter((name): name is string => name !== undefined);
 
   return {

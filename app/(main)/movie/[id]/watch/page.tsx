@@ -1,9 +1,9 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { Play } from 'lucide-react';
+import Play from 'lucide-react/dist/esm/icons/play';
 import { Toggle } from '@/components/ui/toggle';
 import { useMovieDetail } from '@/hooks/useMovies';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
@@ -13,16 +13,10 @@ export default function WatchPage() {
   const params = useParams();
   const router = useRouter();
   const movieId = parseInt(params.id as string);
-  const [isMounted, setIsMounted] = useState(false);
 
   const { data: movie, isLoading } = useMovieDetail(movieId);
   const updateWatchProgress = useUserPreferencesStore((state) => state.updateWatchProgress);
   const { autoplayEnabled, setAutoplay } = usePlayerPreferencesStore();
-
-  // Handle hydration - only render iframe after client-side mount
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Track watch when page loads
   useEffect(() => {
@@ -89,27 +83,15 @@ export default function WatchPage() {
       {/* Player */}
       <div className="px-4 md:px-8 space-y-4">
         <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
-          {!isMounted && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-10">
-              <div className="flex flex-col items-center gap-4">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p className="text-sm text-white/80">Loading player...</p>
-              </div>
-            </div>
-          )}
-          {isMounted && (
-            <iframe
-              src={embedUrl}
-              className="absolute inset-0 w-full h-full"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="origin"
-              title={`Watch ${movie.title}`}
-            />
-          )}
+          <iframe
+            src={embedUrl}
+            className="absolute inset-0 w-full h-full"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="origin"
+            title={`Watch ${movie.title}`}
+          />
         </div>
-
-        {/* Playback Controls */}
         <div className="flex items-center justify-center gap-3">
           <Toggle
             pressed={autoplayEnabled}

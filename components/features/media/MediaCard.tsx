@@ -114,7 +114,7 @@ export function MediaCard({
 
   const cardContent = (
     <div
-      className={`group relative block overflow-hidden rounded-md bg-card transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
+      className={`group relative block overflow-hidden rounded-md bg-card transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background content-visibility-auto contain-intrinsic-size-[0_280px] ${className}`}
       onMouseEnter={handlePrefetch}
     >
       {/* Favorite Button */}

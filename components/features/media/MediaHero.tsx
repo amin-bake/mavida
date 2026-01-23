@@ -15,10 +15,16 @@ import { getBackdropUrl } from '@/lib/tmdb/images';
 import { Button, MovieHeroSkeleton, InlineErrorFallback } from '@/components/ui';
 import { Movie } from '@/types/movie';
 import { TVShow } from '@/types/tv';
+import type { MoviesPage } from '@/types/movie';
+import type { TVShowsPage } from '@/types/tv';
 
 type MediaItem = Movie | TVShow;
 
 interface MediaHeroProps {
+  initialData?: {
+    trending?: MoviesPage;
+    trendingTV?: TVShowsPage;
+  };
   autoRotate?: boolean;
   rotationInterval?: number;
   className?: string;
@@ -34,17 +40,27 @@ function isTVShow(media: MediaItem): media is TVShow {
 }
 
 export function MediaHero({
+  initialData,
   autoRotate = true,
   rotationInterval = 10000,
   className = '',
 }: MediaHeroProps) {
+  // Use provided data or fetch if not provided (for backward compatibility)
   const {
     data: moviesData,
     isLoading: moviesLoading,
     isError: moviesError,
     error: moviesErrorObj,
     refetch: refetchMovies,
-  } = useTrendingMovies('day', 1);
+  } = initialData?.trending
+    ? {
+        data: initialData.trending,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: () => {},
+      }
+    : useTrendingMovies('day', 1);
 
   const {
     data: tvData,
@@ -52,7 +68,15 @@ export function MediaHero({
     isError: tvError,
     error: tvErrorObj,
     refetch: refetchTV,
-  } = useTrendingTV('day', 1);
+  } = initialData?.trendingTV
+    ? {
+        data: initialData.trendingTV,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: () => {},
+      }
+    : useTrendingTV('day', 1);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -171,12 +195,12 @@ export function MediaHero({
     ? `/movie/${currentMedia.id}/watch`
     : `/tv/${currentMedia.id}`;
 
-//   console.log(
-//     '[MediaHero] Rendering:',
-//     title,
-//     'Type:',
-//     isMovie(currentMedia) ? 'Movie' : 'TV Show'
-//   );
+  //   console.log(
+  //     '[MediaHero] Rendering:',
+  //     title,
+  //     'Type:',
+  //     isMovie(currentMedia) ? 'Movie' : 'TV Show'
+  //   );
 
   return (
     <section

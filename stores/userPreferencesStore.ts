@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Movie } from '@/types/movie';
 import type { TVShow } from '@/types/tv';
 import type {
@@ -13,6 +13,26 @@ import type {
   WatchHistoryItem,
   ContinueWatchingItem,
 } from '@/types/media';
+
+// Custom storage for cookies (server-compatible)
+const cookieStorage = {
+  getItem: (name: string) => {
+    if (typeof window === 'undefined') return null;
+    const value = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith(`${name}=`))
+      ?.split('=')[1];
+    return value ? decodeURIComponent(value) : null;
+  },
+  setItem: (name: string, value: string) => {
+    if (typeof window === 'undefined') return;
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000`; // 1 year
+  },
+  removeItem: (name: string) => {
+    if (typeof window === 'undefined') return;
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  },
+};
 
 interface WatchProgress {
   movieId: number;

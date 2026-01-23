@@ -82,7 +82,7 @@ export function TVShowRow({ title, tvShows, className = '', priority = false }: 
       aria-label={`${title} TV show collection`}
     >
       {/* Title */}
-      <h2 className="mb-8 w-fit text-xl font-bold text-text-primary md:text-2xl ">{title}</h2>
+      <h2 className="mb-6 w-fit text-xl font-bold text-text-primary md:text-2xl">{title}</h2>
 
       {/* Scroll Container */}
       <div className="group relative" role="region" aria-label={`Scrollable ${title} list`}>
@@ -147,7 +147,7 @@ export function TVShowRow({ title, tvShows, className = '', priority = false }: 
         {/* Cards Container */}
         <div
           ref={scrollContainerRef}
-          className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth mt-4 pb-1"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {tvShows.map((tvShow, index) => (

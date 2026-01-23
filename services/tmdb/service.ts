@@ -18,6 +18,7 @@ import type {
   TMDBSearchParams,
   TMDBQueryParams,
 } from '@/types/movie';
+import type { TVShow, TVShowsPage } from '@/types/tv';
 
 /**
  * Get or initialize TMDB client
@@ -214,6 +215,39 @@ export async function searchTVShows(
 ): Promise<import('@/types/tv').TVShowsPage> {
   const client = getClient();
   const response = await client.searchTV(query, params);
+
+  return {
+    page: response.page,
+    tvShows: response.results,
+    totalPages: response.total_pages,
+    totalResults: response.total_results,
+  };
+}
+
+/**
+ * Get trending TV shows (transformed)
+ */
+export async function getTrendingTV(
+  timeWindow: 'day' | 'week' = 'week',
+  page: number = 1
+): Promise<TVShowsPage> {
+  const client = getClient();
+  const response = await client.getTrendingTV(timeWindow, page);
+
+  return {
+    page: response.page,
+    tvShows: response.results,
+    totalPages: response.total_pages,
+    totalResults: response.total_results,
+  };
+}
+
+/**
+ * Get popular TV shows (transformed)
+ */
+export async function getPopularTV(page: number = 1): Promise<TVShowsPage> {
+  const client = getClient();
+  const response = await client.getPopularTV(page);
 
   return {
     page: response.page,
