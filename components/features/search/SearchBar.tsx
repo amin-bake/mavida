@@ -28,9 +28,20 @@ export function SearchBar({
   className = '',
 }: SearchBarProps) {
   const router = useRouter();
-  const [query, setQuery] = useState(initialQuery);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Use controlled mode if onSearch is provided, otherwise uncontrolled
+  const [internalQuery, setInternalQuery] = useState(initialQuery);
+  const query = onSearch ? initialQuery : internalQuery;
+  const setQuery = onSearch ? onSearch : setInternalQuery;
+
+  // Sync internal state with initialQuery when it changes (uncontrolled mode)
+  useEffect(() => {
+    if (!onSearch) {
+      setInternalQuery(initialQuery);
+    }
+  }, [initialQuery, onSearch]);
 
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } =
     useSearchStore();
@@ -175,6 +186,7 @@ export function SearchBar({
                         className="flex items-center gap-3 flex-1 text-left"
                         role="option"
                         aria-label={`Search for ${recentQuery}`}
+                        aria-selected="false"
                       >
                         <svg
                           className="h-5 w-5 text-muted-foreground"

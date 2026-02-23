@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { SearchBar, MediaTypeToggle } from '@/components/features/search';
 import { SearchFilters } from '@/components/features/search/SearchFilters';
 import { MediaGrid } from '@/components/features/media';
@@ -12,9 +12,11 @@ import type { TVShow } from '@/types/tv';
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialQuery = searchParams.get('q') || '';
 
-  const [query, setQuery] = useState(initialQuery);
+  // Derive query from initialQuery instead of using useState
+  const query = initialQuery;
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     year: '',
@@ -29,7 +31,11 @@ function SearchContent() {
   });
 
   const handleSearch = (newQuery: string) => {
-    setQuery(newQuery);
+    if (newQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(newQuery.trim())}`);
+    } else {
+      router.push('/search');
+    }
     setPage(1); // Reset to first page on new search
   };
 

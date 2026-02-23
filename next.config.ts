@@ -1,6 +1,12 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Suppress baseline-browser-mapping warnings
+  logging: {
+    fetches: {
+      fullUrl: process.env.NODE_ENV === 'development',
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -21,8 +27,8 @@ const nextConfig: NextConfig = {
 };
 
 // Bundle analyzer configuration
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-});
+// const withBundleAnalyzer = require('@next/bundle-analyzer')({
+//   enabled: process.env.ANALYZE === 'true',
+// });
 
-export default withBundleAnalyzer(nextConfig);
+export default nextConfig;

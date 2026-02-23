@@ -16,14 +16,7 @@ import {
   TMDBQueryParams,
   TMDBSearchParams,
 } from '@/types/movie';
-import type {
-  TVShow,
-  TVSeason,
-  TVEpisode,
-  TVShowSearchResult,
-  TVSeasonDetail,
-  TVEpisodeDetail,
-} from '@/types/tv';
+import type { TVShow, TVShowSearchResult, TVSeasonDetail, TVEpisodeDetail } from '@/types/tv';
 import { TMDB_API_BASE_URL } from '@/lib/constants';
 
 /**
@@ -99,6 +92,8 @@ export class TMDBClient {
   private includeAdult: boolean;
   private rateLimiter: RateLimiter;
   private genresCache: TMDBGenre[] | null = null;
+  private apiCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly cacheDuration: number = 1000 * 60 * 60; // 1 hour
 
   constructor(config: TMDBClientConfig) {
     this.apiKey = config.apiKey;
@@ -133,10 +128,15 @@ export class TMDBClient {
   private async request<T>(endpoint: string, params: Record<string, unknown> = {}): Promise<T> {
     return this.rateLimiter.execute(async () => {
       const url = this.buildUrl(endpoint, params);
+      const cacheKey = url;
+
+      // Check cache first
+      const cached = this.apiCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
+        return cached.data as T;
+      }
 
       try {
-        // console.log('[TMDBClient] Making request to:', url);
-
         const response = await fetch(url, {
           method: 'GET',
           headers: {
@@ -160,7 +160,10 @@ export class TMDBClient {
         }
 
         const data: T = await response.json();
-        // console.log('[TMDBClient] Success, received data');
+
+        // Cache the result
+        this.apiCache.set(cacheKey, { data, timestamp: Date.now() });
+
         return data;
       } catch (error) {
         console.error('[TMDBClient] Request failed:', error);

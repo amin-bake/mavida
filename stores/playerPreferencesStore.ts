@@ -21,8 +21,12 @@ export const usePlayerPreferencesStore = create<PlayerPreferencesState>()(
       autonextEnabled: true,
 
       // Actions
-      setAutoplay: (enabled) => set({ autoplayEnabled: enabled }),
-      setAutonext: (enabled) => set({ autonextEnabled: enabled }),
+      setAutoplay: (enabled) => {
+        set({ autoplayEnabled: enabled });
+      },
+      setAutonext: (enabled) => {
+        set({ autonextEnabled: enabled });
+      },
     }),
     {
       name: 'player-preferences', // localStorage key

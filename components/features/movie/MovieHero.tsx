@@ -271,7 +271,7 @@ export function MovieHero({
         >
           {movies.map((_movie, index) => (
             <button
-              key={index}
+              key={`movie-indicator-${index}`}
               onClick={() => setCurrentIndex(index)}
               className={`h-3 transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                 index === currentIndex ? 'w-8 bg-white' : 'w-3 bg-white/50 hover:bg-white/75'

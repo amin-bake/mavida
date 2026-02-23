@@ -60,35 +60,25 @@ const RATINGS = [
 ];
 
 export function SearchFilters({ filters, onFilterChange }: SearchFiltersProps) {
-  const [localFilters, setLocalFilters] = useState(filters);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Update local state when props change
-  useEffect(() => {
-    setLocalFilters(filters);
-  }, [filters]);
+  // Use filters directly instead of local state - derive during render
+  const localFilters = filters;
 
   const handleYearChange = (year: string) => {
-    const updated = { ...localFilters, year };
-    setLocalFilters(updated);
-    onFilterChange(updated);
+    onFilterChange({ ...filters, year });
   };
 
   const handleGenreChange = (genre: string) => {
-    const updated = { ...localFilters, genre };
-    setLocalFilters(updated);
-    onFilterChange(updated);
+    onFilterChange({ ...filters, genre });
   };
 
   const handleRatingChange = (rating: number) => {
-    const updated = { ...localFilters, minRating: rating };
-    setLocalFilters(updated);
-    onFilterChange(updated);
+    onFilterChange({ ...filters, minRating: rating });
   };
 
   const handleReset = () => {
     const reset = { year: '', genre: '', minRating: 0 };
-    setLocalFilters(reset);
     onFilterChange(reset);
   };
 

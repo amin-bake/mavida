@@ -93,7 +93,7 @@ export function EpisodeGrid({
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: 6 }).map((_, index) => (
-          <EpisodeCardSkeleton key={index} />
+          <EpisodeCardSkeleton key={`episode-skeleton-${index}`} />
         ))}
       </div>
     );
