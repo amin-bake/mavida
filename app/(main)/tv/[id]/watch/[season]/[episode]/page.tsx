@@ -154,6 +154,7 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
       {/* Player */}
       <div className="px-4 md:px-8">
         <TVPlayer
+          key={`${seasonNumber}-${episodeNumber}`}
           tvShow={tvShow}
           season={seasonNumber}
           episode={episodeNumber}

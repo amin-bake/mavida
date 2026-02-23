@@ -35,17 +35,17 @@ function isMovie(media: MediaItem): media is Movie {
   return 'title' in media;
 }
 
-function isTVShow(media: MediaItem): media is TVShow {
-  return 'name' in media;
-}
-
 export function MediaHero({
   initialData,
   autoRotate = true,
   rotationInterval = 10000,
   className = '',
 }: MediaHeroProps) {
-  // Use provided data or fetch if not provided (for backward compatibility)
+  // Always call hooks in the same order
+  const trendingMoviesQuery = useTrendingMovies('day', 1);
+  const trendingTVQuery = useTrendingTV('day', 1);
+
+  // Use provided data or fetched data
   const {
     data: moviesData,
     isLoading: moviesLoading,
@@ -60,7 +60,7 @@ export function MediaHero({
         error: null,
         refetch: () => {},
       }
-    : useTrendingMovies('day', 1);
+    : trendingMoviesQuery;
 
   const {
     data: tvData,
@@ -76,7 +76,7 @@ export function MediaHero({
         error: null,
         refetch: () => {},
       }
-    : useTrendingTV('day', 1);
+    : trendingTVQuery;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -144,7 +144,6 @@ export function MediaHero({
 
   // Loading state
   if (isLoading) {
-    // console.log('[MediaHero] Loading...');
     return <MovieHeroSkeleton />;
   }
 
@@ -194,13 +193,6 @@ export function MediaHero({
   const watchLink = isMovie(currentMedia)
     ? `/movie/${currentMedia.id}/watch`
     : `/tv/${currentMedia.id}`;
-
-  //   console.log(
-  //     '[MediaHero] Rendering:',
-  //     title,
-  //     'Type:',
-  //     isMovie(currentMedia) ? 'Movie' : 'TV Show'
-  //   );
 
   return (
     <section
@@ -364,7 +356,7 @@ export function MediaHero({
             const itemTitle = isMovie(item) ? item.title : item.name;
             return (
               <button
-                key={index}
+                key={`media-indicator-${index}`}
                 onClick={() => setCurrentIndex(index)}
                 className={`h-3 transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                   index === currentIndex ? 'w-8 bg-white' : 'w-3 bg-white/50 hover:bg-white/75'

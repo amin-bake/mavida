@@ -73,7 +73,7 @@ export function SeasonSelector({
 
     checkScrollPosition();
 
-    container.addEventListener('scroll', checkScrollPosition);
+    container.addEventListener('scroll', checkScrollPosition, { passive: true });
     window.addEventListener('resize', checkScrollPosition);
 
     return () => {

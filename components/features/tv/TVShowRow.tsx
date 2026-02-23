@@ -63,7 +63,7 @@ export function TVShowRow({ title, tvShows, className = '', priority = false }: 
 
     checkScrollPosition();
 
-    container.addEventListener('scroll', checkScrollPosition);
+    container.addEventListener('scroll', checkScrollPosition, { passive: true });
     window.addEventListener('resize', checkScrollPosition);
 
     return () => {

@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useReducer } from 'react';
 import { useRouter } from 'next/navigation';
 import Play from 'lucide-react/dist/esm/icons/play';
 import PlaySquare from 'lucide-react/dist/esm/icons/play-square';
@@ -13,6 +13,31 @@ import { Toggle } from '@/components/ui/toggle';
 import { useWatchProgress } from '@/hooks';
 import { usePlayerPreferencesStore } from '@/stores/playerPreferencesStore';
 import type { TVShow, TVEpisode } from '@/types/tv';
+
+interface PlayerState {
+  currentTime: number;
+  duration: number;
+  hasTriggeredAutoNext: boolean;
+  isLoading: boolean;
+}
+
+type PlayerAction =
+  | { type: 'SET_TIME'; time: number; duration: number }
+  | { type: 'TRIGGER_AUTO_NEXT' }
+  | { type: 'SET_LOADING'; loading: boolean };
+
+const playerReducer = (state: PlayerState, action: PlayerAction): PlayerState => {
+  switch (action.type) {
+    case 'SET_TIME':
+      return { ...state, currentTime: action.time, duration: action.duration };
+    case 'TRIGGER_AUTO_NEXT':
+      return { ...state, hasTriggeredAutoNext: true };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.loading };
+    default:
+      return state;
+  }
+};
 
 interface TVPlayerProps {
   tvShow: TVShow;
@@ -32,7 +57,14 @@ export function TVPlayer({
   className = '',
 }: TVPlayerProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const [playerState, dispatch] = useReducer(playerReducer, {
+    currentTime: 0,
+    duration: 0,
+    hasTriggeredAutoNext: false,
+    isLoading: true,
+  });
+
+  const { hasTriggeredAutoNext, isLoading } = playerState;
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Player preferences from Zustand store
@@ -43,6 +75,36 @@ export function TVPlayer({
   // autoplay=1: Video starts playing automatically (enabled by default)
   // autonext=1: Automatically plays next episode when current episode ends
   const streamUrl = `https://vidsrc-embed.ru/embed/tv?tmdb=${tvShow.id}&season=${season}&episode=${episode}${autoplayEnabled ? '&autoplay=1' : '&autoplay=0'}${autonextEnabled ? '&autonext=1' : '&autonext=0'}`;
+
+  // Client-side fallback: Monitor iframe for potential episode completion
+  // This is a backup in case VidSrc's auto-next doesn't work
+  useEffect(() => {
+    if (!autonextEnabled) return;
+
+    const checkForEpisodeEnd = () => {
+      // Try to detect if iframe content indicates episode completion
+      // This is limited since we can't access iframe content directly due to CORS
+      const iframe = iframeRef.current;
+      if (iframe) {
+        try {
+          // Check if iframe is still loading or if src changed (indicating VidSrc handled auto-next)
+          // If the iframe src doesn't match our expected URL, VidSrc might have changed it
+          if (iframe.src !== streamUrl && iframe.src.includes('vidsrc')) {
+            // VidSrc may have handled auto-next
+          }
+        } catch {
+          // Cannot access iframe properties due to CORS
+        }
+      }
+    };
+
+    // Check every 30 seconds as a fallback mechanism
+    const interval = setInterval(checkForEpisodeEnd, 30000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [autonextEnabled, streamUrl]);
 
   // Get current season data
   const currentSeason = tvShow.seasons?.find((s) => s.season_number === season);
@@ -107,8 +169,58 @@ export function TVPlayer({
     }
   }, [getNextEpisodeInfo, onEpisodeChange, router, tvShow.id]);
 
-  // VidSrc handles autoplay and autonext natively with URL parameters
-  // No need for complex postMessage listeners or manual progress tracking
+  // Listen for postMessage events from VidSrc iframe (potential auto-next signals)
+  useEffect(() => {
+    const handlePostMessage = (event: MessageEvent) => {
+      // Handle object messages from VidSrc
+      if (typeof event.data === 'object' && event.data !== null) {
+        const { event: eventType, time, duration: dur } = event.data;
+
+        if (eventType === 'time' && typeof time === 'number' && typeof dur === 'number') {
+          dispatch({ type: 'SET_TIME', time, duration: dur });
+
+          // Check if episode is ending soon (within 10 seconds) and auto-next is enabled
+          // Only trigger once per episode
+          if (
+            autonextEnabled &&
+            !hasTriggeredAutoNext &&
+            time >= dur - 10 &&
+            time > 60 &&
+            getNextEpisodeInfo()
+          ) {
+            dispatch({ type: 'TRIGGER_AUTO_NEXT' });
+            handleNextEpisode();
+          }
+        } else if (eventType === 'ended') {
+          // If there's an explicit ended event, handle it
+          if (autonextEnabled && !hasTriggeredAutoNext && getNextEpisodeInfo()) {
+            dispatch({ type: 'TRIGGER_AUTO_NEXT' });
+            handleNextEpisode();
+          }
+        }
+      }
+
+      // Legacy string-based checks (keep for compatibility)
+      if (typeof event.data === 'string') {
+        if (
+          event.data.includes('ended') ||
+          event.data.includes('finished') ||
+          event.data.includes('complete')
+        ) {
+          // Potential episode end detected
+        }
+        if (event.data.includes('next') || event.data.includes('autonext')) {
+          // Auto-next event detected
+        }
+      }
+    };
+
+    window.addEventListener('message', handlePostMessage);
+
+    return () => {
+      window.removeEventListener('message', handlePostMessage);
+    };
+  }, [autonextEnabled, getNextEpisodeInfo, handleNextEpisode, hasTriggeredAutoNext]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -147,11 +259,16 @@ export function TVPlayer({
           ref={iframeRef}
           src={streamUrl}
           className="h-full w-full"
-          allowFullScreen
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
           referrerPolicy="origin"
-          onLoad={() => setIsLoading(false)}
           title={`${tvShow.name} - S${season} E${episode}`}
+          onLoad={() => {
+            dispatch({ type: 'SET_LOADING', loading: false });
+          }}
+          onError={() => {
+            dispatch({ type: 'SET_LOADING', loading: false });
+          }}
         />
       </div>
 

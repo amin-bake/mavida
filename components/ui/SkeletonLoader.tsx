@@ -34,7 +34,7 @@ export function MovieRowSkeleton({ className = '' }: { className?: string }) {
       {/* Movie cards skeleton */}
       <div className="flex gap-4 overflow-hidden">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="shrink-0 w-40">
+          <div key={`movie-skeleton-${i}`} className="shrink-0 w-40">
             <MovieCardSkeleton />
           </div>
         ))}
@@ -58,7 +58,7 @@ export function MovieGridSkeleton({
       className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 ${className}`}
     >
       {[...Array(count)].map((_, i) => (
-        <MovieCardSkeleton key={i} />
+        <MovieCardSkeleton key={`grid-skeleton-${i}`} />
       ))}
     </div>
   );
@@ -140,7 +140,7 @@ export function MovieDetailSkeleton({ className = '' }: { className?: string }) 
           <Skeleton className="h-8 w-24 mb-4" />
           <div className="flex gap-4 overflow-hidden">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 shrink-0">
+              <div key={`cast-skeleton-${i}`} className="flex flex-col items-center gap-2 shrink-0">
                 <Skeleton className="w-24 h-24 rounded-full" />
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-3 w-16" />
@@ -246,7 +246,7 @@ export function TableRowSkeleton({
   return (
     <div className={`flex gap-4 py-3 ${className}`}>
       {[...Array(columns)].map((_, i) => (
-        <Skeleton key={i} className="h-5 flex-1" />
+        <Skeleton key={`table-skeleton-${i}`} className="h-5 flex-1" />
       ))}
     </div>
   );
