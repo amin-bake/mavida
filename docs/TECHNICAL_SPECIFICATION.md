@@ -892,7 +892,7 @@ Tailwind v4 uses a **dynamic spacing scale** based on a single `--spacing` varia
 <div className="relative">
   <div className="flex gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide">
     {movies.map((movie) => (
-      <div key={movie.id} className="min-w-[200px] snap-start">
+      <div key={movie.id} className="min-w-50 snap-start">
         <MovieCard movie={movie} />
       </div>
     ))}

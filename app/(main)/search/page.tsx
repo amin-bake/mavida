@@ -145,7 +145,7 @@ function SearchContent() {
                     size="lg"
                     variant="outline"
                     onClick={handleLoadMore}
-                    className="min-w-[200px]"
+                    className="min-w-50"
                   >
                     Load More Results
                   </Button>
