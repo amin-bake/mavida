@@ -36,9 +36,24 @@ export const TMDB_IMAGE_SIZES = {
 
 // Video Streaming
 export const STREAMING_SOURCES = {
-  primary: 'https://vidsrc.me/embed/movie',
-  fallback: 'https://vidsrc.xyz/embed/movie',
+  primary: 'https://vidsrcme.su/embed/movie',
+  fallback: 'https://vsrc.su/embed/movie',
 } as const;
+
+// Video streaming utilities
+export const getMovieEmbedUrl = (tmdbId: number, autoplay: boolean = true): string => {
+  return `https://vidsrcme.su/embed/movie?tmdb=${tmdbId}&autoplay=${autoplay ? '1' : '0'}`;
+};
+
+export const getTVEmbedUrl = (
+  tmdbId: number,
+  season: number,
+  episode: number,
+  autoplay: boolean = true,
+  autonext: boolean = true
+): string => {
+  return `https://vidsrcme.su/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}&autoplay=${autoplay ? '1' : '0'}&autonext=${autonext ? '1' : '0'}`;
+};
 
 // Pagination
 export const ITEMS_PER_PAGE = 20;

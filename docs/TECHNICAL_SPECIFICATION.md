@@ -193,10 +193,11 @@ export class TMDBClient {
 
 ### 3.2 Video Streaming - VidSrc API
 
-**Selected API:** VidSrc.me  
+**Selected API:** VidSrc (vidsrcme.su, vsrc.su)  
 **Base URLs:**
 
-- **Movies:** `https://vidsrc.me/embed/movie/{tmdb_id}`
+- **Movies:** `https://vidsrcme.su/embed/movie?tmdb={tmdb_id}&autoplay={0|1}`
+- **TV Shows:** `https://vidsrcme.su/embed/tv?tmdb={tmdb_id}&season={season}&episode={episode}&autoplay={0|1}&autonext={0|1}`
 - **TV Shows:** `https://vidsrcme.ru/api/tv/{tmdb_id}/{season}/{episode}`
 
 **Implementation:**
@@ -210,7 +211,7 @@ export const getStreamingUrl = (
   episode?: number
 ): string => {
   if (mediaType === 'movie') {
-    return `https://vidsrc.me/embed/movie/${tmdbId}`;
+    return `https://vidsrcme.su/embed/movie?tmdb=${tmdbId}&autoplay=1`;
   } else {
     if (season === undefined || episode === undefined) {
       throw new Error('Season and episode are required for TV shows');
@@ -221,7 +222,7 @@ export const getStreamingUrl = (
 
 // Alternative sources (fallback)
 const STREAMING_SOURCES = {
-  primary: 'vidsrc.me',
+  primary: 'vidsrcme.su',
   fallback: 'vidsrc.xyz', // Backup if primary fails
 };
 ```
