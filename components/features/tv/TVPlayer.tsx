@@ -12,6 +12,7 @@ import PlaySquare from 'lucide-react/dist/esm/icons/play-square';
 import { Toggle } from '@/components/ui/toggle';
 import { useWatchProgress } from '@/hooks';
 import { usePlayerPreferencesStore } from '@/stores/playerPreferencesStore';
+import { getTVEmbedUrl } from '@/lib/constants';
 import type { TVShow, TVEpisode } from '@/types/tv';
 
 interface PlayerState {
@@ -74,7 +75,7 @@ export function TVPlayer({
   // VidSrc API embed URL format for TV shows with autoplay and autonext support
   // autoplay=1: Video starts playing automatically (enabled by default)
   // autonext=1: Automatically plays next episode when current episode ends
-  const streamUrl = `https://vidsrc-embed.ru/embed/tv?tmdb=${tvShow.id}&season=${season}&episode=${episode}${autoplayEnabled ? '&autoplay=1' : '&autoplay=0'}${autonextEnabled ? '&autonext=1' : '&autonext=0'}`;
+  const streamUrl = getTVEmbedUrl(tvShow.id, season, episode, autoplayEnabled, autonextEnabled);
 
   // Client-side fallback: Monitor iframe for potential episode completion
   // This is a backup in case VidSrc's auto-next doesn't work

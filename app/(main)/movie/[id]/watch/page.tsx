@@ -8,6 +8,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { useMovieDetail } from '@/hooks/useMovies';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
 import { usePlayerPreferencesStore } from '@/stores/playerPreferencesStore';
+import { getMovieEmbedUrl } from '@/lib/constants';
 
 export default function WatchPage() {
   const params = useParams();
@@ -41,7 +42,7 @@ export default function WatchPage() {
   }
 
   // VidSrc API embed URL with autoplay from user preferences
-  const embedUrl = `https://vidsrc-embed.ru/embed/movie?tmdb=${movieId}${autoplayEnabled ? '&autoplay=1' : '&autoplay=0'}`;
+  const embedUrl = getMovieEmbedUrl(movieId, autoplayEnabled);
 
   return (
     <div className="min-h-screen pb-16 mt-16">

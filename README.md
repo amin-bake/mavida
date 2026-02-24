@@ -84,7 +84,7 @@ A Netflix-inspired personal movie streaming application built with Next.js 16, f
 - **Data Fetching:** [TanStack Query (React Query)](https://tanstack.com/query)
 - **APIs:**
   - [TMDB API](https://www.themoviedb.org/documentation/api) - Movie metadata
-  - [VidSrc API](https://vidsrc.me/) - Video streaming
+  - [VidSrc API](https://vidsrcme.ru/api/) - Video streaming
 
 ## 📋 Prerequisites
 
@@ -240,12 +240,13 @@ Mavida uses [The Movie Database (TMDB) API](https://www.themoviedb.org/documenta
 
 ### VidSrc Integration
 
-Video playback powered by [VidSrc](https://vidsrc.me/):
+Video playback powered by [VidSrc](https://vidsrcme.ru/):
 
 **How It Works:**
 
 - Iframe embed for seamless playback
-- URL format: `https://vidsrc.me/embed/movie/{tmdb_id}`
+- URL format: `https://vidsrcme.su/embed/movie?tmdb={tmdb_id}&autoplay={0|1}`
+- TV format: `https://vidsrcme.su/embed/tv?tmdb={tmdb_id}&season={season}&episode={episode}&autoplay={0|1}&autonext={0|1}`
 - No authentication required
 - Supports fullscreen and responsive sizing
 
