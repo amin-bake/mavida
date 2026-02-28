@@ -41,8 +41,19 @@ export const STREAMING_SOURCES = {
 } as const;
 
 // Video streaming utilities
+//
+// VidSrc API docs: https://vidsrcme.ru/api/
+//   autoplay: optional, 1 or 0. (Enabled by default — pass explicitly to be safe)
+//   autonext: optional, 1 or 0. (Disabled by default — pass 1 to enable native autonext)
+//
+// Using VidSrc's native autonext=1 is correct: the episode transition happens inside
+// the same iframe context so the browser's autoplay policy allows continued playback
+// without requiring a new user gesture. The parent page detects episode changes via
+// PLAYER_EVENT postMessages and updates React state accordingly.
+
 export const getMovieEmbedUrl = (tmdbId: number, autoplay: boolean = true): string => {
-  return `https://vidsrcme.su/embed/movie?tmdb=${tmdbId}&autoplay=${autoplay ? '1' : '0'}`;
+  const autoplayParam = autoplay ? '&autoplay=1' : '&autoplay=0';
+  return `https://vidsrcme.su/embed/movie?tmdb=${tmdbId}${autoplayParam}`;
 };
 
 export const getTVEmbedUrl = (
@@ -50,9 +61,12 @@ export const getTVEmbedUrl = (
   season: number,
   episode: number,
   autoplay: boolean = true,
-  autonext: boolean = true
+  autonext: boolean = false
 ): string => {
-  return `https://vidsrcme.su/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}&autoplay=${autoplay ? '1' : '0'}&autonext=${autonext ? '1' : '0'}`;
+  const autoplayParam = autoplay ? '&autoplay=1' : '&autoplay=0';
+  // autonext defaults to disabled in the API; only add the param when enabling it
+  const autonextParam = autonext ? '&autonext=1' : '';
+  return `https://vidsrcme.su/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}${autoplayParam}${autonextParam}`;
 };
 
 // Pagination

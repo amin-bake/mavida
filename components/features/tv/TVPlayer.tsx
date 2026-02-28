@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useEffect, useRef, useCallback, useReducer } from 'react';
+import { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Play from 'lucide-react/dist/esm/icons/play';
 import PlaySquare from 'lucide-react/dist/esm/icons/play-square';
@@ -18,21 +18,17 @@ import type { TVShow, TVEpisode } from '@/types/tv';
 interface PlayerState {
   currentTime: number;
   duration: number;
-  hasTriggeredAutoNext: boolean;
   isLoading: boolean;
 }
 
 type PlayerAction =
   | { type: 'SET_TIME'; time: number; duration: number }
-  | { type: 'TRIGGER_AUTO_NEXT' }
   | { type: 'SET_LOADING'; loading: boolean };
 
 const playerReducer = (state: PlayerState, action: PlayerAction): PlayerState => {
   switch (action.type) {
     case 'SET_TIME':
       return { ...state, currentTime: action.time, duration: action.duration };
-    case 'TRIGGER_AUTO_NEXT':
-      return { ...state, hasTriggeredAutoNext: true };
     case 'SET_LOADING':
       return { ...state, isLoading: action.loading };
     default:
@@ -61,51 +57,52 @@ export function TVPlayer({
   const [playerState, dispatch] = useReducer(playerReducer, {
     currentTime: 0,
     duration: 0,
-    hasTriggeredAutoNext: false,
     isLoading: true,
   });
 
-  const { hasTriggeredAutoNext, isLoading } = playerState;
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { isLoading } = playerState;
 
   // Player preferences from Zustand store
   const { autoplayEnabled, autonextEnabled, setAutoplay, setAutonext } =
     usePlayerPreferencesStore();
 
-  // VidSrc API embed URL format for TV shows with autoplay and autonext support
-  // autoplay=1: Video starts playing automatically (enabled by default)
-  // autonext=1: Automatically plays next episode when current episode ends
+  // VidSrc API embed URL for TV shows.
+  //
+  // Per the official API docs (https://vidsrcme.ru/api/):
+  //   autoplay=1  — enabled by default; we always pass it explicitly
+  //   autonext=1  — disabled by default; pass it when the user wants auto-next
+  //
+  // Using VidSrc's native autonext=1 means episode transitions happen inside the same
+  // iframe context, so the browser never needs a new user gesture to autoplay.
+  // We detect the episode change via PLAYER_EVENT and notify the parent via onEpisodeChange.
   const streamUrl = getTVEmbedUrl(tvShow.id, season, episode, autoplayEnabled, autonextEnabled);
 
-  // Client-side fallback: Monitor iframe for potential episode completion
-  // This is a backup in case VidSrc's auto-next doesn't work
+  // Stable React key for the iframe element.
+  //
+  // Intentionally does NOT include season/episode — this allows VidSrc's native autonext
+  // to transition episodes inside the same iframe without a remount.
+  //
+  // User-initiated episode navigation uses router.push (see handlePreviousEpisode /
+  // handleNextEpisode below), which navigates to a new URL and causes the whole page
+  // (and therefore this component) to remount naturally.
+  //
+  // Including autoplay / autonext means toggling those prefs still remounts the iframe
+  // immediately so the new URL parameters take effect.
+  const iframeKey = useMemo(
+    () => `${tvShow.id}-${autoplayEnabled ? 'ap1' : 'ap0'}-${autonextEnabled ? 'an1' : 'an0'}`,
+    [tvShow.id, autoplayEnabled, autonextEnabled]
+  );
+
+  // Reset loading indicator whenever the iframe key changes (preference toggle).
+  // dispatch() from useReducer is permitted in effects; only useState setters trigger
+  // the "avoid calling setState in an effect" lint rule.
+  const prevIframeKeyRef = useRef(iframeKey);
   useEffect(() => {
-    if (!autonextEnabled) return;
-
-    const checkForEpisodeEnd = () => {
-      // Try to detect if iframe content indicates episode completion
-      // This is limited since we can't access iframe content directly due to CORS
-      const iframe = iframeRef.current;
-      if (iframe) {
-        try {
-          // Check if iframe is still loading or if src changed (indicating VidSrc handled auto-next)
-          // If the iframe src doesn't match our expected URL, VidSrc might have changed it
-          if (iframe.src !== streamUrl && iframe.src.includes('vidsrc')) {
-            // VidSrc may have handled auto-next
-          }
-        } catch {
-          // Cannot access iframe properties due to CORS
-        }
-      }
-    };
-
-    // Check every 30 seconds as a fallback mechanism
-    const interval = setInterval(checkForEpisodeEnd, 30000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [autonextEnabled, streamUrl]);
+    if (prevIframeKeyRef.current !== iframeKey) {
+      prevIframeKeyRef.current = iframeKey;
+      dispatch({ type: 'SET_LOADING', loading: true });
+    }
+  }, [iframeKey]);
 
   // Get current season data
   const currentSeason = tvShow.seasons?.find((s) => s.season_number === season);
@@ -150,78 +147,72 @@ export function TVPlayer({
 
   const handlePreviousEpisode = useCallback(() => {
     if (!hasPreviousEpisode) return;
-
-    const newEpisode = episode - 1;
-    if (onEpisodeChange) {
-      onEpisodeChange(season, newEpisode);
-    } else {
-      router.push(`/tv/${tvShow.id}/watch/${season}/${newEpisode}`);
-    }
-  }, [hasPreviousEpisode, episode, season, onEpisodeChange, router, tvShow.id]);
+    // Always navigate via router so the iframe (and page) remounts with the new episode URL.
+    // onEpisodeChange is reserved for VidSrc-internal autonext notifications.
+    router.push(`/tv/${tvShow.id}/watch/${season}/${episode - 1}`);
+  }, [hasPreviousEpisode, episode, season, router, tvShow.id]);
 
   const handleNextEpisode = useCallback(() => {
     const nextEp = getNextEpisodeInfo();
     if (!nextEp) return;
+    // Always navigate via router so the iframe (and page) remounts with the new episode URL.
+    router.push(`/tv/${tvShow.id}/watch/${nextEp.season}/${nextEp.episode}`);
+  }, [getNextEpisodeInfo, router, tvShow.id]);
 
-    if (onEpisodeChange) {
-      onEpisodeChange(nextEp.season, nextEp.episode);
-    } else {
-      router.push(`/tv/${tvShow.id}/watch/${nextEp.season}/${nextEp.episode}`);
-    }
-  }, [getNextEpisodeInfo, onEpisodeChange, router, tvShow.id]);
-
-  // Listen for postMessage events from VidSrc iframe (potential auto-next signals)
+  // Listen for postMessage events from VidSrc iframe.
+  //
+  // VidSrc sends two message formats:
+  //   1. { event: 'time', time, duration }  — playback progress tick
+  //   2. { type: 'PLAYER_EVENT', data: { season, episode, event, currentTime, duration } }
+  //      — higher-level events that include which episode VidSrc is currently playing
+  //
+  // When autonext=1 is in the URL, VidSrc transitions episodes inside the same iframe.
+  // PLAYER_EVENT lets us detect the new episode; we notify the parent page via
+  // onEpisodeChange so it can update its state (URL, query key, episode info display)
+  // without causing an iframe remount that would interrupt playback.
   useEffect(() => {
     const handlePostMessage = (event: MessageEvent) => {
-      // Handle object messages from VidSrc
       if (typeof event.data === 'object' && event.data !== null) {
-        const { event: eventType, time, duration: dur } = event.data;
+        const data = event.data as Record<string, unknown>;
+
+        // PLAYER_EVENT — VidSrc's own envelope that includes episode context
+        if (data.type === 'PLAYER_EVENT') {
+          const pd = (data.data ?? {}) as {
+            season?: number;
+            episode?: number;
+          };
+          // When VidSrc's native autonext moves to a different episode, notify parent
+          if (
+            typeof pd.season === 'number' &&
+            typeof pd.episode === 'number' &&
+            (pd.season !== season || pd.episode !== episode)
+          ) {
+            // Notify the parent; it will update its UI state (header, query key, URL)
+            // without remounting the iframe — VidSrc is already playing this episode.
+            onEpisodeChange?.(pd.season, pd.episode);
+          }
+          return;
+        }
+
+        const {
+          event: eventType,
+          time,
+          duration: dur,
+        } = data as {
+          event?: string;
+          time?: number;
+          duration?: number;
+        };
 
         if (eventType === 'time' && typeof time === 'number' && typeof dur === 'number') {
           dispatch({ type: 'SET_TIME', time, duration: dur });
-
-          // Check if episode is ending soon (within 10 seconds) and auto-next is enabled
-          // Only trigger once per episode
-          if (
-            autonextEnabled &&
-            !hasTriggeredAutoNext &&
-            time >= dur - 10 &&
-            time > 60 &&
-            getNextEpisodeInfo()
-          ) {
-            dispatch({ type: 'TRIGGER_AUTO_NEXT' });
-            handleNextEpisode();
-          }
-        } else if (eventType === 'ended') {
-          // If there's an explicit ended event, handle it
-          if (autonextEnabled && !hasTriggeredAutoNext && getNextEpisodeInfo()) {
-            dispatch({ type: 'TRIGGER_AUTO_NEXT' });
-            handleNextEpisode();
-          }
-        }
-      }
-
-      // Legacy string-based checks (keep for compatibility)
-      if (typeof event.data === 'string') {
-        if (
-          event.data.includes('ended') ||
-          event.data.includes('finished') ||
-          event.data.includes('complete')
-        ) {
-          // Potential episode end detected
-        }
-        if (event.data.includes('next') || event.data.includes('autonext')) {
-          // Auto-next event detected
         }
       }
     };
 
     window.addEventListener('message', handlePostMessage);
-
-    return () => {
-      window.removeEventListener('message', handlePostMessage);
-    };
-  }, [autonextEnabled, getNextEpisodeInfo, handleNextEpisode, hasTriggeredAutoNext]);
+    return () => window.removeEventListener('message', handlePostMessage);
+  }, [season, episode, onEpisodeChange]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -256,20 +247,17 @@ export function TVPlayer({
         )}
 
         <iframe
-          key={`${tvShow.id}-${season}-${episode}`}
-          ref={iframeRef}
+          // Stable key: only changes for user-initiated navigation (not VidSrc-internal).
+          // See iframeKey state + vidsrcNavigatedRef above.
+          key={iframeKey}
           src={streamUrl}
           className="h-full w-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           referrerPolicy="origin"
           title={`${tvShow.name} - S${season} E${episode}`}
-          onLoad={() => {
-            dispatch({ type: 'SET_LOADING', loading: false });
-          }}
-          onError={() => {
-            dispatch({ type: 'SET_LOADING', loading: false });
-          }}
+          onLoad={() => dispatch({ type: 'SET_LOADING', loading: false })}
+          onError={() => dispatch({ type: 'SET_LOADING', loading: false })}
         />
       </div>
 

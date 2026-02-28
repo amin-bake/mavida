@@ -22,9 +22,6 @@ export default function WatchPage() {
   // Track watch when page loads
   useEffect(() => {
     if (movie) {
-      // Set progress to 15% for visibility
-      // Note: VidSrc is an iframe, so we cannot track actual playback progress
-      // Users would need to manually update progress or we'd need a different player
       updateWatchProgress(movie.id, 15, movie.title, movie.posterPath);
     }
   }, [movie, updateWatchProgress]);
@@ -85,12 +82,17 @@ export default function WatchPage() {
       <div className="px-4 md:px-8 space-y-4">
         <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
           <iframe
+            // Keying by autoplayEnabled forces a remount (and therefore a fresh load with
+            // the correct autoplay param) whenever the user toggles the preference.
+            key={`movie-${movieId}-${autoplayEnabled ? 'ap1' : 'ap0'}`}
             src={embedUrl}
             className="absolute inset-0 w-full h-full"
             allowFullScreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             referrerPolicy="origin"
             title={`Watch ${movie.title}`}
+            onLoad={() => {}}
+            onError={() => {}}
           />
         </div>
         <div className="flex items-center justify-center gap-3">

@@ -12,7 +12,7 @@ import { useTVShow, useTVEpisode, useTVSeason } from '@/services/tmdb/tv.queries
 import { TVPlayer } from '@/components/features/tv/TVPlayer';
 import { SeasonSelector } from '@/components/features/tv/SeasonSelector';
 import { EpisodeGrid } from '@/components/features/tv/EpisodeGrid';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 interface EpisodePlayerPageProps {
   params: Promise<{
@@ -37,6 +37,21 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
   // State for season selector
   const [selectedSeason, setSelectedSeason] = useState(seasonNumber);
 
+  // Active episode state — updated when VidSrc internally transitions via autonext.
+  // Kept separate from URL params (use(params) is static) so React Query re-fetches
+  // and the UI updates without a full page navigation or iframe remount.
+  const [activeSeasonNum, setActiveSeasonNum] = useState(seasonNumber);
+  const [activeEpisodeNum, setActiveEpisodeNum] = useState(episodeNumber);
+
+  const handleEpisodeChange = useCallback(
+    (s: number, e: number) => {
+      setActiveSeasonNum(s);
+      setActiveEpisodeNum(e);
+      window.history.replaceState({}, '', `/tv/${tvId}/watch/${s}/${e}`);
+    },
+    [tvId]
+  );
+
   // Fetch TV show and episode data
   const {
     data: tvShow,
@@ -49,7 +64,7 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
     isLoading: isLoadingEpisode,
     isError: isErrorEpisode,
     error: episodeError,
-  } = useTVEpisode(tvId, seasonNumber, episodeNumber);
+  } = useTVEpisode(tvId, activeSeasonNum, activeEpisodeNum);
 
   // Fetch season details for episode list
   const { data: seasonDetails, isLoading: isLoadingSeasonDetails } = useTVSeason(
@@ -145,7 +160,7 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
               {tvShow.name}
             </Link>
             <h1 className="text-xl md:text-2xl font-bold text-foreground">
-              Season {seasonNumber} · Episode {episodeNumber}
+              Season {activeSeasonNum} · Episode {activeEpisodeNum}
             </h1>
           </div>
         </div>
@@ -154,11 +169,11 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
       {/* Player */}
       <div className="px-4 md:px-8">
         <TVPlayer
-          key={`${seasonNumber}-${episodeNumber}`}
           tvShow={tvShow}
-          season={seasonNumber}
-          episode={episodeNumber}
+          season={activeSeasonNum}
+          episode={activeEpisodeNum}
           episodeDetails={episodeDetails}
+          onEpisodeChange={handleEpisodeChange}
         />
       </div>
 
