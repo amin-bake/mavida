@@ -38,8 +38,8 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
   const [selectedSeason, setSelectedSeason] = useState(seasonNumber);
 
   // Active episode state — updated when VidSrc internally transitions via autonext.
-  // Kept separate from URL params (use(params) is static) so React Query re-fetches
-  // and the UI updates without a full page navigation or iframe remount.
+  // Separate from URL params (use(params) is static) so React Query re-fetches and
+  // the header updates without a full page navigation or iframe remount.
   const [activeSeasonNum, setActiveSeasonNum] = useState(seasonNumber);
   const [activeEpisodeNum, setActiveEpisodeNum] = useState(episodeNumber);
 
@@ -73,7 +73,7 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
   );
 
   // Loading state - show loading while queries are in progress
-  if (isLoadingShow || isLoadingEpisode) {
+  if (isLoadingShow || (isLoadingEpisode && !episodeDetails)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -170,8 +170,8 @@ export default function EpisodePlayerPage({ params }: EpisodePlayerPageProps) {
       <div className="px-4 md:px-8">
         <TVPlayer
           tvShow={tvShow}
-          season={activeSeasonNum}
-          episode={activeEpisodeNum}
+          season={seasonNumber}
+          episode={episodeNumber}
           episodeDetails={episodeDetails}
           onEpisodeChange={handleEpisodeChange}
         />

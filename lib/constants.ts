@@ -42,16 +42,18 @@ export const STREAMING_SOURCES = {
 
 // Video streaming utilities
 //
-// VidSrc API docs: https://vidsrcme.ru/api/
-//   autoplay: optional, 1 or 0. (Enabled by default — pass explicitly to be safe)
-//   autonext: optional, 1 or 0. (Disabled by default — pass 1 to enable native autonext)
+// VidSrc API Notes (https://vidsrcme.ru/api/):
+//   autoplay: optional, 1 or 0. (Enabled default — we pass it explicitly to be safe)
+//   autonext: optional, 1 or 0. (Disabled default — pass 1 to enable native autonext)
 //
-// Using VidSrc's native autonext=1 is correct: the episode transition happens inside
-// the same iframe context so the browser's autoplay policy allows continued playback
-// without requiring a new user gesture. The parent page detects episode changes via
-// PLAYER_EVENT postMessages and updates React state accordingly.
+// Using VidSrc's native autonext=1 is correct: the episode transition happens inside the
+// same iframe context so the browser's autoplay policy allows continued playback without
+// requiring a new user gesture. The parent page detects episode changes via PLAYER_EVENT
+// and syncs the browser URL with window.history.replaceState (no remount needed).
 
 export const getMovieEmbedUrl = (tmdbId: number, autoplay: boolean = true): string => {
+  // Always pass autoplay explicitly — omitting it causes browsers to block playback
+  // in cross-origin iframes during programmatic navigation (router.push / page load).
   const autoplayParam = autoplay ? '&autoplay=1' : '&autoplay=0';
   return `https://vidsrcme.su/embed/movie?tmdb=${tmdbId}${autoplayParam}`;
 };
