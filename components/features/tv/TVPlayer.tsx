@@ -277,7 +277,7 @@ export function TVPlayer({
           onPressedChange={setAutonext}
           variant="outline"
           aria-label="Toggle auto-next episode"
-          className="gap-2 data-[state=on]:text-[#E50914] data-[state=on]:*:[svg]:stroke-[#E50914]"
+          className="gap-2 data-[state=on]:text-[#E50914] data-[state=on]:*:[svg]:stroke-[#E50914] cursor-pointer"
         >
           <PlaySquare className="h-4 w-4" />
           <span className="text-sm font-medium">Auto-Next</span>

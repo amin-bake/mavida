@@ -104,7 +104,7 @@ export default function WatchPage() {
             onPressedChange={setAutoplay}
             variant="outline"
             aria-label="Toggle autoplay"
-            className="gap-2 data-[state=on]:text-[#E50914] data-[state=on]:*:[svg]:fill-[#E50914]"
+            className="gap-2 data-[state=on]:text-[#E50914] data-[state=on]:*:[svg]:fill-[#E50914] cursor-pointer"
           >
             <Play className="h-4 w-4" />
             <span className="text-sm font-medium">Autoplay</span>
