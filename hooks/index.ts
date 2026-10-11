@@ -8,6 +8,7 @@ export * from './useDebounce';
 export * from './useContinueWatching';
 export * from './useEnhancedContinueWatching';
 export * from './useWatchProgress';
+export * from './useVidsrc';
 
 // Re-export TV hooks from TMDB service
 export {

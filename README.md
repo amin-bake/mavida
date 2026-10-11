@@ -31,6 +31,7 @@ A Netflix-inspired personal movie streaming application built with Next.js 16, f
 - **Seamless Playback** - VidSrc integration for smooth streaming
 - **Watch Progress** - Automatic tracking of playback position
 - **Resume Feature** - Continue watching from where you left off
+- **Continue Watching Row** - Homepage row (below the hero) listing in-progress movies and TV shows with progress bars, resumable in one click
 - **Fullscreen Support** - Native fullscreen for immersive viewing
 - **Responsive Player** - Adapts to all screen sizes
 
@@ -84,7 +85,7 @@ A Netflix-inspired personal movie streaming application built with Next.js 16, f
 - **Data Fetching:** [TanStack Query (React Query)](https://tanstack.com/query)
 - **APIs:**
   - [TMDB API](https://www.themoviedb.org/documentation/api) - Movie metadata
-  - [VidSrc API](https://vidsrcme.ru/api/) - Video streaming
+  - [VidSrc API](https://vidsrc.sh/vidsrc/docs/) - Video streaming
 
 ## 📋 Prerequisites
 
@@ -240,13 +241,17 @@ Mavida uses [The Movie Database (TMDB) API](https://www.themoviedb.org/documenta
 
 ### VidSrc Integration
 
-Video playback powered by [VidSrc](https://vidsrcme.ru/):
+Video playback powered by [VidSrc](https://vidsrc.sh/vidsrc/docs/):
 
 **How It Works:**
 
 - Iframe embed for seamless playback
-- URL format: `https://vidsrcme.su/embed/movie?tmdb={tmdb_id}&autoplay={0|1}`
-- TV format: `https://vidsrcme.su/embed/tv?tmdb={tmdb_id}&season={season}&episode={episode}&autoplay={0|1}&autonext={0|1}`
+- URL format: `https://vidsrc.sh/embed/movie?tmdb={tmdb_id}&autoplay={0|1}&startAt={seconds}`
+- TV format: `https://vidsrc.sh/embed/tv?tmdb={tmdb_id}&season={season}&episode={episode}&autoplay={0|1}&autonext={0|1}`
+- Availability pre-check via `/info/...` (200 = available, 404 = not) shows a "not available" state instead of a dead player
+- Best-quality badge (1080p/720p/...) shown on the player from the info endpoint
+- Subtitle selection handled natively by the VidSrc player itself
+- The player postMessages `PLAYER_EVENT`s (`player_status`, `player_progress`, `player_duration`) used for watch-progress tracking, accurate pause/seek commits, and resume (`startAt`)
 - No authentication required
 - Supports fullscreen and responsive sizing
 
@@ -261,11 +266,18 @@ Video playback powered by [VidSrc](https://vidsrcme.ru/):
 
 ```tsx
 <iframe
-  src={`https://vidsrc.me/embed/movie/${movieId}`}
+  src={`https://vidsrc.sh/embed/movie/${movieId}`}
   allowFullScreen
   className="w-full h-full"
 />
 ```
+
+**Custom Domain (optional, no-click autoplay):**
+
+Set `NEXT_PUBLIC_VIDSRC_BASE_URL` to your own domain — Cloudflare CNAME
+`@` → `vidsrc-ip.com` (proxied) with **SSL/TLS mode: Flexible**. The player then opens
+directly into playback (`autoplay=1`) with no play button — official domains always
+show a play button first.
 
 ## 🐛 Troubleshooting
 
@@ -414,7 +426,7 @@ This project is built for personal use. Please ensure you comply with TMDB's [Te
 ## 🙏 Acknowledgments
 
 - [The Movie Database (TMDB)](https://www.themoviedb.org/) for comprehensive movie data
-- [VidSrc](https://vidsrc.me/) for video streaming capabilities
+- [VidSrc](https://vidsrc.sh/vidsrc/docs/) for video streaming capabilities
 - [Vercel](https://vercel.com/) for hosting and Next.js framework
 - Netflix for design inspiration
 

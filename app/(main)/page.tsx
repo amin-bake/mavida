@@ -12,6 +12,13 @@ import { MovieRow } from '@/components/features/movie';
 import { TVShowRow } from '@/components/features/tv';
 import { MovieRowSkeleton, LazyLoad } from '@/components/ui';
 
+// Revalidate the homepage server-side at least this often so the hero and rows show
+// newly released titles within the window (1h). ISR semantics: visitors get the cached
+// page while a background regeneration fetches fresh TMDB data. Route segment config
+// must stay a literal for Next's static analysis — keep in sync with
+// TMDB_SERVER_REVALIDATE_SECONDS in lib/constants.ts (used by the TMDB fetches).
+export const revalidate = 3600;
+
 // Dynamic imports for heavy components (Rule 2.4)
 const MediaHero = dynamic(
   () => import('@/components/features/media/MediaHero').then((m) => ({ default: m.MediaHero })),

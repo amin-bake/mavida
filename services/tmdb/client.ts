@@ -17,7 +17,7 @@ import {
   TMDBSearchParams,
 } from '@/types/movie';
 import type { TVShow, TVShowSearchResult, TVSeasonDetail, TVEpisodeDetail } from '@/types/tv';
-import { TMDB_API_BASE_URL } from '@/lib/constants';
+import { TMDB_API_BASE_URL, TMDB_SERVER_REVALIDATE_SECONDS } from '@/lib/constants';
 
 /**
  * Rate limiter for TMDB API requests
@@ -92,7 +92,7 @@ export class TMDBClient {
   private includeAdult: boolean;
   private rateLimiter: RateLimiter;
   private genresCache: TMDBGenre[] | null = null;
-  private apiCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private apiCache: Map<string, { data: unknown; timestamp: number }> = new Map();
   private readonly cacheDuration: number = 1000 * 60 * 60; // 1 hour
 
   constructor(config: TMDBClientConfig) {
@@ -139,6 +139,11 @@ export class TMDBClient {
       try {
         const response = await fetch(url, {
           method: 'GET',
+          // Server components can opt into ISR-only regeneration: the page revalidates
+          // server-side at most every TMDB_SERVER_REVALIDATE_SECONDS instead of on every
+          // request. The Next-specific `next` option is ignored by the browser when this
+          // same client is used client-side.
+          next: { revalidate: TMDB_SERVER_REVALIDATE_SECONDS },
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',

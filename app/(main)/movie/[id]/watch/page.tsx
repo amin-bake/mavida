@@ -1,11 +1,14 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Play from 'lucide-react/dist/esm/icons/play';
+import Film from 'lucide-react/dist/esm/icons/film';
 import { Toggle } from '@/components/ui/toggle';
 import { useMovieDetail } from '@/hooks/useMovies';
+import { useMovieAvailability } from '@/hooks/useVidsrc';
+import { useWatchProgress } from '@/hooks';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
 import { usePlayerPreferencesStore } from '@/stores/playerPreferencesStore';
 import { getMovieEmbedUrl } from '@/lib/constants';
@@ -16,18 +19,103 @@ export default function WatchPage() {
   const movieId = parseInt(params.id as string);
 
   const { data: movie, isLoading } = useMovieDetail(movieId);
-  const updateWatchProgress = useUserPreferencesStore((state) => state.updateWatchProgress);
+
+  // Unified watch tracking — same pipeline as the TV player. Writes the unified
+  // watchHistoryItems + continueWatching store that feeds the homepage
+  // "Continue Watching" row (the legacy updateWatchProgress path never did).
+  const { updateProgress, saveProgress, markComplete } = useWatchProgress({
+    id: movieId,
+    type: 'movie',
+    title: movie?.title,
+    posterPath: movie?.posterPath || undefined,
+    runtime: movie?.runtime ?? undefined,
+  });
+  // Refs so the stable postMessage listener always sees the latest callbacks.
+  const updateProgressRef = useRef(updateProgress);
+  const saveProgressRef = useRef(saveProgress);
+  const markCompleteRef = useRef(markComplete);
+  useEffect(() => {
+    updateProgressRef.current = updateProgress;
+    saveProgressRef.current = saveProgress;
+    markCompleteRef.current = markComplete;
+  });
+
+  // Previously-saved positions: unified continueWatching first, with a legacy
+  // watchHistory fallback so pre-migration data still resumes.
+  const continueWatching = useUserPreferencesStore((state) => state.continueWatching);
+  const watchHistory = useUserPreferencesStore((state) => state.watchHistory);
   const { autoplayEnabled, setAutoplay } = usePlayerPreferencesStore();
 
-  // Track watch when page loads
-  useEffect(() => {
-    if (movie) {
-      // Set progress to 15% for visibility
-      // Note: VidSrc is an iframe, so we cannot track actual playback progress
-      // Users would need to manually update progress or we'd need a different player
-      updateWatchProgress(movie.id, 15, movie.title, movie.posterPath);
+  // VidSrc availability for this movie — quality badge + graceful "not available" state.
+  const availability = useMovieAvailability(movieId);
+  const availabilityResolved = availability.isSuccess || availability.isError;
+  const notAvailable = availability.data?.status === 'unavailable';
+  const qualityBadge =
+    availability.data?.status === 'available' ? availability.data.info.quality : undefined;
+
+  // Resume playback: map the last saved progress to a startAt timestamp (seconds).
+  // Resolved once — via the render-phase "adjust state" pattern, after the persisted
+  // store has rehydrated and BEFORE the iframe mounts — so the player loads exactly one
+  // time with the resume position baked into the URL (no src swap → no restart).
+  const [resumeStartAt, setResumeStartAt] = useState<number | undefined>(undefined);
+  const [resumeReady, setResumeReady] = useState(false);
+
+  if (!resumeReady && movie && useUserPreferencesStore.persist.hasHydrated()) {
+    let startAt: number | undefined;
+    const durationSeconds = movie.runtime ? movie.runtime * 60 : undefined;
+    const saved =
+      continueWatching.find((item) => item.id === movie.id && item.type === 'movie') ||
+      watchHistory.find((item) => item.movieId === movie.id);
+    // Only resume meaningful progress (>= 5s); treat >= 90% as watched-through.
+    if (saved && durationSeconds && saved.progress >= 5 && saved.progress < 90) {
+      startAt = Math.floor((saved.progress / 100) * durationSeconds);
     }
-  }, [movie, updateWatchProgress]);
+    setResumeStartAt(startAt);
+    setResumeReady(true);
+  }
+
+  // Track real playback progress from VidSrc player events.
+  // The player postMessages { type: 'PLAYER_EVENT', data: { player_status,
+  // player_progress, player_duration } } — ~every 5s while playing, plus on pause/seek.
+  useEffect(() => {
+    if (!movie) return;
+
+    const handlePostMessage = (event: MessageEvent) => {
+      if (typeof event.data !== 'object' || event.data === null) return;
+      const data = event.data as Record<string, unknown>;
+      if (data.type !== 'PLAYER_EVENT') return;
+
+      const pd = (data.data ?? {}) as {
+        player_status?: string;
+        player_progress?: number;
+        player_duration?: number;
+      };
+      const { player_status, player_progress, player_duration } = pd;
+
+      if (player_status === 'completed') {
+        markCompleteRef.current();
+        return;
+      }
+
+      if (
+        typeof player_progress === 'number' &&
+        typeof player_duration === 'number' &&
+        player_duration > 0
+      ) {
+        if (player_status === 'paused' || player_status === 'seeked') {
+          // Commit the exact position immediately on pause/seek so resume is accurate.
+          saveProgressRef.current(Math.min((player_progress / player_duration) * 100, 100));
+          return;
+        }
+        if (player_status === 'playing') {
+          updateProgressRef.current(player_progress, player_duration);
+        }
+      }
+    };
+
+    window.addEventListener('message', handlePostMessage);
+    return () => window.removeEventListener('message', handlePostMessage);
+  }, [movie]);
 
   // Loading state
   if (isLoading || !movie) {
@@ -41,8 +129,11 @@ export default function WatchPage() {
     );
   }
 
-  // VidSrc API embed URL with autoplay from user preferences
-  const embedUrl = getMovieEmbedUrl(movieId, autoplayEnabled);
+  // VidSrc embed URL with autoplay / resume from user preferences
+  const embedUrl = getMovieEmbedUrl(movieId, {
+    autoplay: autoplayEnabled,
+    startAtSeconds: resumeStartAt,
+  });
 
   return (
     <div className="min-h-screen pb-16 mt-16">
@@ -84,19 +175,50 @@ export default function WatchPage() {
       {/* Player */}
       <div className="px-4 md:px-8 space-y-4">
         <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
-          <iframe
-            // Keying by autoplayEnabled forces a remount (and therefore a fresh load with
-            // the correct autoplay param) whenever the user toggles the preference.
-            key={`movie-${movieId}-${autoplayEnabled ? 'ap1' : 'ap0'}`}
-            src={embedUrl}
-            className="absolute inset-0 w-full h-full"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="origin"
-            title={`Watch ${movie.title}`}
-            onLoad={() => {}}
-            onError={() => {}}
-          />
+          {!resumeReady && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="text-sm text-white/80">Loading player...</p>
+              </div>
+            </div>
+          )}
+          {resumeReady && availabilityResolved && !notAvailable && (
+            <iframe
+              // Keying by autoplayEnabled forces a remount (and therefore a fresh load
+              // with the correct autoplay param) whenever the user toggles the preference.
+              // Mounted only after resume + availability are resolved so the src is final
+              // on first load.
+              key={`movie-${movieId}-${autoplayEnabled ? 'ap1' : 'ap0'}`}
+              src={embedUrl}
+              className="absolute inset-0 w-full h-full"
+              allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="origin"
+              title={`Watch ${movie.title}`}
+              onLoad={() => {}}
+              onError={() => {}}
+            />
+          )}
+          {resumeReady && availabilityResolved && notAvailable && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/80 px-6 text-center backdrop-blur-sm">
+              <Film className="h-10 w-10 text-white/50" />
+              <p className="font-medium text-white/90">
+                This title isn&apos;t currently available on VidSrc.
+              </p>
+              <Link
+                href={`/movie/${movieId}`}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Back to Details
+              </Link>
+            </div>
+          )}
+          {qualityBadge && (
+            <div className="absolute right-3 top-3 z-20 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white/90 backdrop-blur-sm">
+              {qualityBadge}
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-center gap-3">
           <Toggle

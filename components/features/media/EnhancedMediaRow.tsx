@@ -91,7 +91,6 @@ export function EnhancedMediaRow({
   return (
     <section className={`relative px-4 md:px-8 ${className}`} aria-label={`${title} collection`}>
       <h2 className="mb-8 w-fit text-xl font-bold text-text-primary md:text-2xl">{title}</h2>
-
       <div className="group relative" role="region" aria-label={`Scrollable ${title} list`}>
         {/* Left Gradient Fade */}
         <div

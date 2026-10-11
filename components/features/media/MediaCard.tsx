@@ -63,7 +63,9 @@ export function MediaCard({
 
   // Determine link href based on media type
   const href = isMovie(media)
-    ? `/movie/${media.id}`
+    ? progress !== undefined
+      ? `/movie/${media.id}/watch` // Resume watching movie
+      : `/movie/${media.id}` // Browse movie details
     : season !== undefined && episode !== undefined
       ? `/tv/${media.id}/watch/${season}/${episode}` // Resume watching TV show
       : `/tv/${media.id}`; // Browse TV show
@@ -151,6 +153,16 @@ export function MediaCard({
         </div>
       )}
 
+      {/* Resume Badge - shown for Continue Watching items (fades on hover to reveal the info overlay) */}
+      {progress !== undefined && progress > 0 && (
+        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-sm transition-opacity duration-200 ease-in-out group-hover:opacity-0">
+          <svg className="h-3.5 w-3.5 fill-red-600" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          Resume
+        </div>
+      )}
+
       {/* Poster Image */}
       <div className="relative aspect-2/3 w-full">
         {/* Progress Bar - shown when progress is provided */}
@@ -230,7 +242,10 @@ export function MediaCard({
 
   // Otherwise wrap in Link
   return (
-    <Link href={href} aria-label={`View details for ${title}`}>
+    <Link
+      href={href}
+      aria-label={progress !== undefined ? `Resume ${title}` : `View details for ${title}`}
+    >
       {cardContent}
     </Link>
   );

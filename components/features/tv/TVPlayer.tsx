@@ -7,11 +7,14 @@
 
 import { useEffect, useRef, useCallback, useReducer, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Play from 'lucide-react/dist/esm/icons/play';
 import PlaySquare from 'lucide-react/dist/esm/icons/play-square';
+import Film from 'lucide-react/dist/esm/icons/film';
 import { Toggle } from '@/components/ui/toggle';
-import { useWatchProgress } from '@/hooks';
+import { useWatchProgress, useEpisodeAvailability } from '@/hooks';
 import { usePlayerPreferencesStore } from '@/stores/playerPreferencesStore';
+import { useUserPreferencesStore } from '@/stores';
 import { getTVEmbedUrl } from '@/lib/constants';
 import type { TVShow, TVEpisode } from '@/types/tv';
 
@@ -66,16 +69,41 @@ export function TVPlayer({
   const { autoplayEnabled, autonextEnabled, setAutoplay, setAutonext } =
     usePlayerPreferencesStore();
 
-  // VidSrc API embed URL for TV shows.
+  // VidSrc availability for the initially-loaded episode (keyed on props, which stay
+  // static during autonext playback, so this never refetches mid-episode).
+  const availability = useEpisodeAvailability(tvShow.id, season, episode);
+  const availabilityResolved = availability.isSuccess || availability.isError;
+  const notAvailable = availability.data?.status === 'unavailable';
+  const qualityBadge =
+    availability.data?.status === 'available' ? availability.data.info.quality : undefined;
+
+  // Resume playback: map the last saved progress for this exact episode to a startAt
+  // timestamp (seconds). Resolved once — via the render-phase "adjust state" pattern,
+  // after the persisted store has rehydrated and BEFORE the iframe mounts — so the
+  // player loads exactly one time with the resume position baked into the URL
+  // (no src swap → no playback restart).
+  const watchHistoryItems = useUserPreferencesStore((state) => state.watchHistoryItems);
+  const [resumeStartAt, setResumeStartAt] = useState<number | undefined>(undefined);
+  const [resumeReady, setResumeReady] = useState(false);
+
+  // VidSrc embed URL for TV shows.
   //
-  // Per the official API docs (https://vidsrcme.ru/api/):
-  //   autoplay=1  — enabled by default; we always pass it explicitly
-  //   autonext=1  — disabled by default; pass it when the user wants auto-next
+  // Per the official API docs (https://vidsrc.sh/vidsrc/docs/):
+  //   autoplay=1 — on official domains the player always shows a play button first;
+  //                this only controls whether playback starts automatically after that click.
+  //   autonext=1 — shows an "Up next" countdown and auto-plays the next episode when the
+  //                current one ends; works on specific-episode URLs too.
+  //   startAt    — resume from the last saved position (resolved once, below).
   //
   // Using VidSrc's native autonext=1 means episode transitions happen inside the same
   // iframe context, so the browser never needs a new user gesture to autoplay.
-  // We detect the episode change via PLAYER_EVENT and sync the URL with replaceState.
-  const streamUrl = getTVEmbedUrl(tvShow.id, season, episode, autoplayEnabled, autonextEnabled);
+  // We detect the episode change via PLAYER_EVENT (player_info.season/episode) and sync
+  // the URL with replaceState (no iframe remount needed).
+  const streamUrl = getTVEmbedUrl(tvShow.id, season, episode, {
+    autoplay: autoplayEnabled,
+    autonext: autonextEnabled,
+    startAtSeconds: resumeStartAt,
+  });
 
   // Tracks the episode VidSrc is currently playing.
   // Initialised from props; updated in the postMessage event handler when VidSrc's native
@@ -90,11 +118,37 @@ export function TVPlayer({
     onEpisodeChangeRef.current = onEpisodeChange;
   });
 
+  if (!resumeReady && useUserPreferencesStore.persist.hasHydrated()) {
+    let startAt: number | undefined;
+    if (
+      episodeDetails &&
+      episodeDetails.season_number === season &&
+      episodeDetails.episode_number === episode
+    ) {
+      const durationSeconds = episodeDetails.runtime ? episodeDetails.runtime * 60 : undefined;
+      const saved = watchHistoryItems.find(
+        (item) =>
+          item.id === tvShow.id &&
+          item.type === 'tv' &&
+          item.season === season &&
+          item.episode === episode
+      );
+      // Only resume meaningful progress (>= 5s); treat >= 90% as watched-through.
+      if (saved && durationSeconds && saved.progress >= 5 && saved.progress < 90) {
+        startAt = Math.floor((saved.progress / 100) * durationSeconds);
+      }
+    }
+    setResumeStartAt(startAt);
+    setResumeReady(true);
+  }
+
   // Show-level iframe key — intentionally excludes season/episode so VidSrc's native
   // autonext can transition episodes inside the same iframe without a React remount.
-  // Toggling autoplay/autonext preferences still remounts the iframe via the key change.
+  // Toggling autoplay/autonext preferences still remounts the iframe (the params live
+  // in the URL, and a fresh load is required to apply them).
   const iframeKey = useMemo(
-    () => `${tvShow.id}-${autoplayEnabled ? 'ap1' : 'ap0'}-${autonextEnabled ? 'an1' : 'an0'}`,
+    () =>
+      `${tvShow.id}-${autoplayEnabled ? 'ap1' : 'ap0'}-${autonextEnabled ? 'an1' : 'an0'}`,
     [tvShow.id, autoplayEnabled, autonextEnabled]
   );
 
@@ -103,7 +157,7 @@ export function TVPlayer({
   const currentSeasonEpisodeCount = currentSeason?.episode_count || 0;
 
   // Watch progress tracking
-  const { updateProgress: _updateProgress, saveProgress: _saveProgress } = useWatchProgress({
+  const { updateProgress, markComplete, saveProgress } = useWatchProgress({
     id: tvShow.id,
     type: 'tv',
     season: liveEpisode.s,
@@ -114,6 +168,17 @@ export function TVPlayer({
     runtime: episodeDetails?.runtime || undefined,
     totalSeasons: tvShow.number_of_seasons,
     totalEpisodes: currentSeasonEpisodeCount,
+  });
+
+  // Refs so the stable postMessage listener always sees the latest callbacks
+  // (their closures re-bind to the active season/episode on every render).
+  const updateProgressRef = useRef(updateProgress);
+  const saveProgressRef = useRef(saveProgress);
+  const markCompleteRef = useRef(markComplete);
+  useEffect(() => {
+    updateProgressRef.current = updateProgress;
+    saveProgressRef.current = saveProgress;
+    markCompleteRef.current = markComplete;
   });
 
   // Navigation helpers (based on liveEpisode so they stay accurate after VidSrc autonext)
@@ -152,14 +217,22 @@ export function TVPlayer({
 
   // Listen for postMessage events from the VidSrc iframe.
   //
-  // VidSrc sends two formats:
-  //   1. { event: 'time', time, duration }  — playback progress tick
-  //   2. { type: 'PLAYER_EVENT', data: { season, episode, ... } }
-  //      — when autonext=1, fired as VidSrc advances to the next episode
+  // Current payload (https://vidsrc.sh/vidsrc/docs/):
+  //   { type: 'PLAYER_EVENT', data: {
+  //       player_info:    { imdb, tmdb, mediaType, season, episode },
+  //       player_status:  'playing' | 'paused' | 'completed' | 'seeked',
+  //       player_progress:  <seconds>,
+  //       player_duration:  <seconds>
+  //   } }
   //
-  // On PLAYER_EVENT with a new episode we:
-  //   - update liveEpisode state → re-renders episode counter + nav buttons
-  //   - call onEpisodeChangeRef → parent page updates its header and React Query key
+  // The old formats ({ event: 'time', time, duration } and PLAYER_EVENT with a flat
+  // data.season/data.episode) are no longer emitted.
+  //
+  // On PLAYER_EVENT we:
+  //   - sync liveEpisode from player_info (fires on native autonext transitions)
+  //     → re-renders episode counter + nav buttons, calls onEpisodeChangeRef
+  //   - track playback progress (~every 5s while playing, plus pause/seek)
+  //   - mark the episode complete on 'completed'
   // The iframe is NOT remounted — VidSrc already loaded the new episode inside it.
   //
   // Registered once (empty dep array); changing values accessed via refs to avoid
@@ -168,33 +241,52 @@ export function TVPlayer({
     const handlePostMessage = (event: MessageEvent) => {
       if (typeof event.data !== 'object' || event.data === null) return;
       const data = event.data as Record<string, unknown>;
+      if (data.type !== 'PLAYER_EVENT') return;
 
-      if (data.type === 'PLAYER_EVENT') {
-        const pd = (data.data ?? {}) as { season?: number; episode?: number };
-        if (
-          typeof pd.season === 'number' &&
-          typeof pd.episode === 'number' &&
-          (pd.season !== liveEpisodeRef.current.s || pd.episode !== liveEpisodeRef.current.e)
-        ) {
-          const next = { s: pd.season, e: pd.episode };
+      const pd = (data.data ?? {}) as {
+        player_info?: {
+          imdb?: string | null;
+          tmdb?: number | null;
+          mediaType?: string | null;
+          season?: number | null;
+          episode?: number | null;
+        };
+        player_status?: string;
+        player_progress?: number;
+        player_duration?: number;
+      };
+      const { player_status, player_progress, player_duration } = pd;
+
+      // Episode sync — the player re-sends PLAYER_EVENT (with the new player_info) when
+      // native autonext advances to a different episode inside the same iframe.
+      const info = pd.player_info ?? {};
+      if (typeof info.season === 'number' && typeof info.episode === 'number') {
+        if (info.season !== liveEpisodeRef.current.s || info.episode !== liveEpisodeRef.current.e) {
+          const next = { s: info.season, e: info.episode };
           liveEpisodeRef.current = next;
           setLiveEpisode(next);
-          onEpisodeChangeRef.current?.(pd.season, pd.episode);
+          onEpisodeChangeRef.current?.(info.season, info.episode);
         }
-        return;
       }
 
-      const {
-        event: eventType,
-        time,
-        duration: dur,
-      } = data as {
-        event?: string;
-        time?: number;
-        duration?: number;
-      };
-      if (eventType === 'time' && typeof time === 'number' && typeof dur === 'number') {
-        dispatch({ type: 'SET_TIME', time, duration: dur });
+      // Progress + duration arrive on every event; throttle saving inside the hook.
+      if (
+        typeof player_progress === 'number' &&
+        typeof player_duration === 'number' &&
+        player_duration > 0
+      ) {
+        dispatch({ type: 'SET_TIME', time: player_progress, duration: player_duration });
+        if (player_status === 'playing') {
+          updateProgressRef.current(player_progress, player_duration);
+        } else if (player_status === 'paused' || player_status === 'seeked') {
+          // Commit the exact position immediately on pause/seek so resume is accurate.
+          saveProgressRef.current(Math.min((player_progress / player_duration) * 100, 100));
+        }
+      }
+
+      // Episode finished.
+      if (player_status === 'completed') {
+        markCompleteRef.current();
       }
     };
 
@@ -225,7 +317,7 @@ export function TVPlayer({
     <div className={`space-y-6 ${className}`}>
       {/* Video Player */}
       <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black shadow-2xl">
-        {isLoading && (
+        {isLoading && !notAvailable && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-10">
             <div className="flex flex-col items-center gap-4">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -234,22 +326,45 @@ export function TVPlayer({
           </div>
         )}
 
-        <iframe
-          // Key includes autoplayEnabled so toggling the preference unmounts/remounts the
-          // iframe immediately, which is how the new autoplay=0/default setting takes effect.
-          // Key includes autonext so toggling it remounts the iframe with the new URL
-          // (autonext=1 vs no autonext param). Season/episode are also included so
-          // user-initiated navigation forces a fresh load.
-          key={iframeKey}
-          src={streamUrl}
-          className="h-full w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-          referrerPolicy="origin"
-          title={`${tvShow.name} - S${liveEpisode.s} E${liveEpisode.e}`}
-          onLoad={() => dispatch({ type: 'SET_LOADING', loading: false })}
-          onError={() => dispatch({ type: 'SET_LOADING', loading: false })}
-        />
+        {resumeReady && availabilityResolved && !notAvailable && (
+          <iframe
+            // Mounted only after resume + availability are resolved so the src is final
+            // on first load (no startAt-less load followed by a reload with startAt).
+            // Key includes autoplayEnabled so toggling the preference unmounts/remounts the
+            // iframe immediately, which is how the new autoplay=0/default setting takes effect.
+            // Key includes autonext so toggling it remounts the iframe with the updated URL.
+            key={iframeKey}
+            src={streamUrl}
+            className="h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            referrerPolicy="origin"
+            title={`${tvShow.name} - S${liveEpisode.s} E${liveEpisode.e}`}
+            onLoad={() => dispatch({ type: 'SET_LOADING', loading: false })}
+            onError={() => dispatch({ type: 'SET_LOADING', loading: false })}
+          />
+        )}
+
+        {resumeReady && availabilityResolved && notAvailable && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/80 px-6 text-center backdrop-blur-sm">
+            <Film className="h-10 w-10 text-white/50" />
+            <p className="font-medium text-white/90">
+              This episode isn&apos;t currently available on VidSrc.
+            </p>
+            <Link
+              href={`/tv/${tvShow.id}`}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Back to {tvShow.name}
+            </Link>
+          </div>
+        )}
+
+        {qualityBadge && (
+          <div className="absolute right-3 top-3 z-20 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white/90 backdrop-blur-sm">
+            {qualityBadge}
+          </div>
+        )}
       </div>
 
       {/* VidSrc handles auto-next episode natively with autonext=1 parameter */}

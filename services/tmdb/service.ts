@@ -4,21 +4,14 @@
  */
 
 import { getTMDBClient, createTMDBClient } from './client';
-import {
-  transformMovie,
-  transformMovieDetail,
-  transformCast,
-  transformCrew,
-  transformVideos,
-} from '@/lib/tmdb/transformer';
+import { transformMovie, transformMovieDetail } from '@/lib/tmdb/transformer';
 import type {
-  Movie,
   MovieDetail,
   MoviesPage,
   TMDBSearchParams,
   TMDBQueryParams,
 } from '@/types/movie';
-import type { TVShow, TVShowsPage } from '@/types/tv';
+import type { TVShowsPage } from '@/types/tv';
 
 /**
  * Get or initialize TMDB client
@@ -26,7 +19,7 @@ import type { TVShow, TVShowsPage } from '@/types/tv';
 function getClient() {
   try {
     return getTMDBClient();
-  } catch (error) {
+  } catch {
     // Client not initialized, create it now
     const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
     if (!apiKey) {

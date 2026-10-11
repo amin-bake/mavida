@@ -6,33 +6,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Movie } from '@/types/movie';
-import type { TVShow } from '@/types/tv';
-import type {
-  MediaType,
-  FavoriteItem,
-  WatchHistoryItem,
-  ContinueWatchingItem,
-} from '@/types/media';
-
-// Custom storage for cookies (server-compatible)
-const cookieStorage = {
-  getItem: (name: string) => {
-    if (typeof window === 'undefined') return null;
-    const value = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith(`${name}=`))
-      ?.split('=')[1];
-    return value ? decodeURIComponent(value) : null;
-  },
-  setItem: (name: string, value: string) => {
-    if (typeof window === 'undefined') return;
-    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000`; // 1 year
-  },
-  removeItem: (name: string) => {
-    if (typeof window === 'undefined') return;
-    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-  },
-};
+import type { MediaType, FavoriteItem, WatchHistoryItem, ContinueWatchingItem } from '@/types/media';
 
 interface WatchProgress {
   movieId: number;
@@ -298,8 +272,9 @@ export const useUserPreferencesStore = create<UserPreferencesState>()(
       },
     }),
     {
-      name: 'mavida-user-preferences',
-      skipHydration: true,
+      name: 'mavida-user-preferences', // localStorage key
+      storage: createJSONStorage(() => localStorage),
+      skipHydration: false,
       partialize: (state) => ({
         favorites: state.favorites,
         watchHistory: state.watchHistory,
